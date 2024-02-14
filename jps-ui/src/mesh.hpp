@@ -8,6 +8,7 @@
 #include <glm/vec2.hpp>
 
 #include <limits>
+#include <sstream>
 #include <vector>
 
 class Mesh
@@ -39,6 +40,8 @@ public:
     size_t FindContainingPolygon(const glm::vec2& p) const;
     glm::vec2 Vertex(size_t index) const;
     size_t CountVertices() const { return vertices.size(); }
+    size_t CountPolygons() const { return polygons.size(); }
+    std::stringstream intoLibPolyanyaMeshDescription() const;
 
 private:
     Mesh(const Mesh& other) = delete;

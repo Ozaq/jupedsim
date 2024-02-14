@@ -1,10 +1,13 @@
 // Copyright © 2024 Forschungszentrum Jülich GmbH
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #include "gui.hpp"
+#include "mesh.h"
 #include "mesh.hpp"
 #include "rendering_mesh.hpp"
+#include "searchinstance.h"
 #include "wkt.hpp"
 
+#include <exception>
 #include <imgui_internal.h>
 
 #include <ImGuiFileDialog.h>
@@ -79,11 +82,23 @@ void Gui::Draw()
                 geo = std::make_unique<DrawableGEOS>(wkt);
                 Mesh m(geo->tri());
                 m.MergeGreedy();
-                mesh = std::make_unique<RenderingMesh>(m);
+                auto buf = m.intoLibPolyanyaMeshDescription();
+                std::cout << buf.str() << std::endl;
+                text = buf.str();
+                try {
+                    polyanya_mesh = std::make_unique<polyanya::Mesh>(buf);
+                    search = std::make_unique<polyanya::SearchInstance>(polyanya_mesh.get());
+                } catch(const std::exception& e) {
+                };
+                render_mesh = std::make_unique<RenderingMesh>(m);
                 should_recenter = true;
             }
         }
         ImGuiFileDialog::Instance()->Close();
+    }
+
+    if(text) {
+        ImGui::TextUnformatted(text.value().c_str());
     }
 
     ImGui::Render();

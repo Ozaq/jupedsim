@@ -5,13 +5,19 @@
 #include "rendering_mesh.hpp"
 #include "wkt.hpp"
 
+#include <searchinstance.h>
+
 #include <imgui.h>
+#include <memory>
 
 class Gui
 {
 private:
     std::unique_ptr<DrawableGEOS> geo{nullptr};
-    std::unique_ptr<RenderingMesh> mesh{nullptr};
+    std::unique_ptr<RenderingMesh> render_mesh{nullptr};
+    std::unique_ptr<polyanya::Mesh> polyanya_mesh{};
+    std::unique_ptr<polyanya::SearchInstance> search{};
+    std::optional<std::string> text{};
     bool should_exit = false;
     bool should_recenter = false;
 
@@ -23,5 +29,5 @@ public:
     bool ShouldExit() const { return should_exit; }
     bool RecenterOnGeometry() const { return should_recenter; }
     const DrawableGEOS* Geometry() const { return geo.get(); }
-    const RenderingMesh* RMesh() const { return mesh.get(); }
+    const RenderingMesh* RMesh() const { return render_mesh.get(); }
 };

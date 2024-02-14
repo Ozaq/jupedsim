@@ -19,6 +19,7 @@ add_executable(jps-ui
 )
 
 target_link_libraries(jps-ui
+    polyanya
     glfw
     OpenGL::GL
     GEOS::geos_c
@@ -57,10 +58,11 @@ if (BUILD_TESTS)
         src/shader.hpp
         src/wkt.cpp
         src/wkt.hpp
-    
+
     )
 
     target_link_libraries(jps-ui-tests PRIVATE
+        polyanya
         GTest::gtest
         GTest::gtest_main
         GTest::gmock

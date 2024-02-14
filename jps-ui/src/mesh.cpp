@@ -2,18 +2,22 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #include "mesh.hpp"
 #include "disjoint_set.hpp"
+#include "glm/ext/quaternion_geometric.hpp"
 #include "wkt.hpp"
 
 #include <CGAL/number_utils.h>
 
 #include <algorithm>
+#include <cmath>
 #include <fmt/format.h>
 #include <fmt/ranges.h>
 #include <format>
+#include <limits>
 #include <queue>
 
 #include <iterator>
 #include <optional>
+#include <sstream>
 #include <vector>
 
 template <typename T>
@@ -506,6 +510,105 @@ size_t Mesh::FindContainingPolygon(const glm::vec2& p) const
 glm::vec2 Mesh::Vertex(size_t index) const
 {
     return vertices.at(index);
+}
+
+static int toPolyanyaIndex(size_t idx)
+{
+    if(idx == std::numeric_limits<size_t>::max()) {
+        return -1;
+    }
+    assert(idx <= std::numeric_limits<int>::max());
+    return idx;
+}
+
+std::stringstream Mesh::intoLibPolyanyaMeshDescription() const
+{
+    std::stringstream buf{};
+    buf << "mesh\n2\n";
+    buf << CountVertices() << " " << CountPolygons() << "\n\n";
+
+    auto indexOfValue = [](const auto& vec, const auto& val) -> std::optional<size_t> {
+        const auto iter = std::find(std::begin(vec), std::end(vec), val);
+        if(iter == std::end(vec)) {
+            return std::nullopt;
+        }
+        return std::distance(std::begin(vec), iter);
+    };
+
+    auto findNeighborIndices = [this, indexOfValue](size_t vertex_index) -> auto {
+        // Collect the incoming and outgoing edge (as indices) for this polygon at the specified
+        // vertex index.
+        struct Wedge {
+            /// index 0 is previous index, index 2 is the next index
+            size_t indices[3];
+            /// represents the orientation of the wedge as ccw rotation in radians vs the [0,1]
+            /// vector
+            double angle;
+            bool operator<(const Wedge& other) const { return angle < other.angle; }
+        };
+
+        std::vector<Wedge> neighbor_wedge{};
+        const glm::dvec2 ref{0, 1};
+        for(size_t polygon_index = 0; polygon_index < polygons.size(); ++polygon_index) {
+            const auto& polygon_vertices = polygons[polygon_index].vertices;
+            const auto count_vertices = polygon_vertices.size();
+            if(const auto idx = indexOfValue(polygon_vertices, vertex_index); idx) {
+                const size_t prev_idx = (*idx + count_vertices - 1) % count_vertices;
+                const size_t next_idx = (*idx + 1) % count_vertices;
+                const auto next_vec = glm::normalize(vertices[next_idx] - vertices[*idx]);
+                const auto prev_vec = glm::normalize(vertices[prev_idx] - vertices[*idx]);
+                const auto middle_vec = glm::normalize(next_vec + prev_vec);
+                const double cos = glm::dot(ref, middle_vec);
+                const double sin = glm::cross(glm::dvec3(ref, 0), glm::dvec3(middle_vec, 0)).z;
+                const double angle = std::atan2(cos, sin);
+                neighbor_wedge.emplace_back(Wedge{{prev_idx, *idx, next_idx}, angle});
+            }
+        }
+        // Sort wedges by orientation
+        std::sort(std::begin(neighbor_wedge), std::end(neighbor_wedge));
+        std::vector<size_t> neighbor_indices{};
+        neighbor_indices.reserve(2 * neighbor_wedge.size());
+        for(size_t idx = 0; idx < neighbor_wedge.size(); ++idx) {
+            neighbor_indices.emplace_back(neighbor_wedge[idx].indices[1]);
+            // If the wedges do not share an edge that means they are not touching and there is a
+            // gap in between
+            const size_t next_idx = (idx + 1) % neighbor_wedge.size();
+            if(neighbor_wedge[idx].indices[0] != neighbor_wedge[next_idx].indices[2]) {
+                neighbor_indices.emplace_back(Mesh::Polygon::InvalidIndex);
+            }
+        }
+        return neighbor_indices;
+    };
+
+    for(size_t vertex_index = 0; vertex_index < vertices.size(); ++vertex_index) {
+        const auto& vertex = vertices[vertex_index];
+        buf << vertex.x << " " << vertex.y << " ";
+
+        const auto neighbors = findNeighborIndices(vertex_index);
+        buf << neighbors.size() << " ";
+        for(const auto n : neighbors) {
+            buf << toPolyanyaIndex(n) << " ";
+        }
+        buf << "\n";
+    }
+
+    buf << "\n";
+
+    for(const auto& p : polygons) {
+        buf << p.vertices.size() << " ";
+        for(const auto& v : p.vertices) {
+            buf << toPolyanyaIndex(v) << " ";
+        }
+        buf << p.neighbors.size() << " ";
+        for(size_t idx = 0; idx < p.neighbors.size(); ++idx) {
+            const size_t shifted_idx = (idx + 1) % p.neighbors.size();
+            const auto n = p.neighbors[shifted_idx];
+            buf << toPolyanyaIndex(n) << " ";
+        }
+        buf << "\n";
+    }
+
+    return buf;
 }
 
 bool Mesh::polygonContains(const size_t polygonIndex, glm::vec2 p) const
