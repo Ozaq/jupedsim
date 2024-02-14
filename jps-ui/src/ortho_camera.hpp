@@ -14,8 +14,8 @@ private:
     glm::vec3 eye{0.0f};
     glm::vec3 center{0.0f, 0.0f, -1.0f};
     glm::vec3 up{0.0f, 1.0f, 0.0f};
-    glm::mat4x4 view{1.0f};
-    glm::mat4x4 projection{1.0f};
+    glm::mat4x4 view_projection{1.0f};
+    glm::mat4x4 view_projection_inv{1.0f};
     float aspect{1.0f};
     float frustrum_half_width{1.0f};
     bool dirty{true};
@@ -27,4 +27,6 @@ public:
     void CenterOn(AABB bounds);
     void ChangeViewport(float width, float height);
     void Update(Shader& shader);
+    const glm::mat4x4& ViewProjection() const { return view_projection; }
+    glm::dvec2 ViewportToXYPlane(glm::dvec2 pos) const;
 };

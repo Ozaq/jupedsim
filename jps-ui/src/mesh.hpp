@@ -59,5 +59,6 @@ private:
     mergedPolygon(size_t polygon_a_index, size_t polygon_b_index, size_t first_common_vertex_in_a);
     double polygonArea(const std::vector<size_t> indices) const;
     bool polygonContains(const size_t, glm::vec2 p) const;
+    void trimEmptyPolygons();
     void updateBoundingBoxes();
 };

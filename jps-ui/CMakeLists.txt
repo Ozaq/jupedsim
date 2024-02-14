@@ -16,6 +16,8 @@ add_executable(jps-ui
     src/shader.hpp
     src/wkt.cpp
     src/wkt.hpp
+    src/path.hpp
+    src/path.cpp
 )
 
 target_link_libraries(jps-ui
@@ -58,7 +60,8 @@ if (BUILD_TESTS)
         src/shader.hpp
         src/wkt.cpp
         src/wkt.hpp
-
+        src/path.hpp
+        src/path.cpp
     )
 
     target_link_libraries(jps-ui-tests PRIVATE

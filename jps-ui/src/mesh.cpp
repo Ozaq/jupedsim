@@ -18,6 +18,7 @@
 #include <iterator>
 #include <optional>
 #include <sstream>
+#include <unordered_map>
 #include <vector>
 
 template <typename T>
@@ -84,6 +85,8 @@ void Mesh::MergeGreedy()
     // 2) "Smart" merge remaining polygons
     smartMerge(true);
     // 3) Validate correctness
+
+    trimEmptyPolygons();
 
     updateBoundingBoxes();
 }
@@ -469,6 +472,32 @@ std::vector<uint16_t> Mesh::SegmentIndices() const
     return indices;
 }
 
+void Mesh::trimEmptyPolygons()
+{
+    const auto polygon_count =
+        std::count_if(std::begin(polygons), std::end(polygons), [](const auto& p) {
+            return !p.vertices.empty();
+        });
+    std::vector<Mesh::Polygon> trimed_polygons{};
+    trimed_polygons.reserve(polygon_count);
+    std::unordered_map<size_t, size_t> index_mapping{};
+
+    for(size_t index = 0; index < polygons.size(); ++index) {
+        if(polygons[index].vertices.empty()) {
+            continue;
+        }
+        index_mapping[index] = trimed_polygons.size();
+        trimed_polygons.emplace_back(polygons[index]);
+    }
+
+    for(auto& p : trimed_polygons) {
+        for(auto& n : p.neighbors) {
+            n = index_mapping[n];
+        }
+    }
+    polygons = trimed_polygons;
+}
+
 void Mesh::updateBoundingBoxes()
 {
     boundingBoxes.clear();
@@ -540,9 +569,10 @@ std::stringstream Mesh::intoLibPolyanyaMeshDescription() const
         // vertex index.
         struct Wedge {
             /// index 0 is previous index, index 2 is the next index
-            size_t indices[3];
+            size_t vertex_indices[3];
             /// represents the orientation of the wedge as ccw rotation in radians vs the [0,1]
             /// vector
+            size_t polygon_index;
             double angle;
             bool operator<(const Wedge& other) const { return angle < other.angle; }
         };
@@ -561,7 +591,8 @@ std::stringstream Mesh::intoLibPolyanyaMeshDescription() const
                 const double cos = glm::dot(ref, middle_vec);
                 const double sin = glm::cross(glm::dvec3(ref, 0), glm::dvec3(middle_vec, 0)).z;
                 const double angle = std::atan2(cos, sin);
-                neighbor_wedge.emplace_back(Wedge{{prev_idx, *idx, next_idx}, angle});
+                neighbor_wedge.emplace_back(
+                    Wedge{{prev_idx, *idx, next_idx}, polygon_index, angle});
             }
         }
         // Sort wedges by orientation
@@ -569,11 +600,12 @@ std::stringstream Mesh::intoLibPolyanyaMeshDescription() const
         std::vector<size_t> neighbor_indices{};
         neighbor_indices.reserve(2 * neighbor_wedge.size());
         for(size_t idx = 0; idx < neighbor_wedge.size(); ++idx) {
-            neighbor_indices.emplace_back(neighbor_wedge[idx].indices[1]);
+            neighbor_indices.emplace_back(neighbor_wedge[idx].polygon_index);
             // If the wedges do not share an edge that means they are not touching and there is a
             // gap in between
             const size_t next_idx = (idx + 1) % neighbor_wedge.size();
-            if(neighbor_wedge[idx].indices[0] != neighbor_wedge[next_idx].indices[2]) {
+            if(neighbor_wedge[idx].vertex_indices[0] !=
+               neighbor_wedge[next_idx].vertex_indices[2]) {
                 neighbor_indices.emplace_back(Mesh::Polygon::InvalidIndex);
             }
         }
@@ -599,7 +631,6 @@ std::stringstream Mesh::intoLibPolyanyaMeshDescription() const
         for(const auto& v : p.vertices) {
             buf << toPolyanyaIndex(v) << " ";
         }
-        buf << p.neighbors.size() << " ";
         for(size_t idx = 0; idx < p.neighbors.size(); ++idx) {
             const size_t shifted_idx = (idx + 1) % p.neighbors.size();
             const auto n = p.neighbors[shifted_idx];

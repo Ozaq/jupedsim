@@ -3,6 +3,7 @@
 #include "gui.hpp"
 #include "mesh.h"
 #include "mesh.hpp"
+#include "point.h"
 #include "rendering_mesh.hpp"
 #include "searchinstance.h"
 #include "wkt.hpp"
@@ -17,6 +18,8 @@
 
 #include <filesystem>
 #include <memory>
+#include <optional>
+#include <vector>
 
 std::string to_shortcut(const ImGuiKeyChord key)
 {
@@ -25,13 +28,14 @@ std::string to_shortcut(const ImGuiKeyChord key)
     return {shortcut.data()};
 }
 
-void Gui::Draw()
+void Gui::Draw(const AppState& state)
 {
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 
     should_recenter = false;
+    wkt_path = std::nullopt;
 
     if(ImGui::BeginMainMenuBar()) {
         if(ImGui::BeginMenu("Menu")) {
@@ -76,30 +80,30 @@ void Gui::Draw()
         if(ImGuiFileDialog::Instance()->IsOk()) {
             std::filesystem::path filePathName = ImGuiFileDialog::Instance()->GetFilePathName();
             std::filesystem::path filePath = ImGuiFileDialog::Instance()->GetCurrentPath();
-
-            const auto wkt = read_wkt(filePath / filePathName);
-            if(wkt) {
-                geo = std::make_unique<DrawableGEOS>(wkt);
-                Mesh m(geo->tri());
-                m.MergeGreedy();
-                auto buf = m.intoLibPolyanyaMeshDescription();
-                std::cout << buf.str() << std::endl;
-                text = buf.str();
-                try {
-                    polyanya_mesh = std::make_unique<polyanya::Mesh>(buf);
-                    search = std::make_unique<polyanya::SearchInstance>(polyanya_mesh.get());
-                } catch(const std::exception& e) {
-                };
-                render_mesh = std::make_unique<RenderingMesh>(m);
-                should_recenter = true;
-            }
+            wkt_path = filePath / filePathName;
         }
         ImGuiFileDialog::Instance()->Close();
     }
 
-    if(text) {
-        ImGui::TextUnformatted(text.value().c_str());
-    }
+    ImGui::Text(
+        "View_Projection Matrix\n %f, %f, %f, %f\n%f, %f, %f, %f\n%f, %f, %f, %f\n%f, %f, %f, %f",
+        state.cam->ViewProjection()[0][0],
+        state.cam->ViewProjection()[0][1],
+        state.cam->ViewProjection()[0][2],
+        state.cam->ViewProjection()[0][3],
+        state.cam->ViewProjection()[1][0],
+        state.cam->ViewProjection()[1][1],
+        state.cam->ViewProjection()[1][2],
+        state.cam->ViewProjection()[1][3],
+        state.cam->ViewProjection()[2][0],
+        state.cam->ViewProjection()[2][1],
+        state.cam->ViewProjection()[2][2],
+        state.cam->ViewProjection()[2][3],
+        state.cam->ViewProjection()[3][0],
+        state.cam->ViewProjection()[3][1],
+        state.cam->ViewProjection()[3][2],
+        state.cam->ViewProjection()[3][3]);
+    ImGui::Text("Clicked @ {%f, %f}", state.clicked_pos.x, state.clicked_pos.y);
 
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

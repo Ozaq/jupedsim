@@ -1,5 +1,6 @@
 // Copyright © 2024 Forschungszentrum Jülich GmbH
 // SPDX-License-Identifier: LGPL-3.0-or-later
+#include "app_state.hpp"
 #include "gui.hpp"
 #include "ortho_camera.hpp"
 #include "shader.hpp"
@@ -18,6 +19,7 @@
 #include <cstdio>
 #include <iostream>
 #include <limits>
+#include <memory>
 #include <vector>
 
 using vec3 = glm::dvec3;
@@ -39,11 +41,10 @@ const std::string vertex_shader_code = R"(
     #version 330 core
     layout (location = 0) in vec2 inPos;
     uniform mat4 model;
-    uniform mat4 view;
-    uniform mat4 projection;
+    uniform mat4 view_projection;
     void main()
     {
-       gl_Position = projection * view * model * vec4(inPos.x, inPos.y, 0.0, 1.0);
+       gl_Position = view_projection * model * vec4(inPos.x, inPos.y, 0.0, 1.0);
     }
 )";
 
@@ -57,6 +58,23 @@ const std::string fragment_shader_code = R"(
         outColor = color;
     }
 )";
+
+void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
+{
+    ImGuiIO& io = ImGui::GetIO();
+    io.AddMouseButtonEvent(button, action == GLFW_PRESS);
+
+    if(!io.WantCaptureMouse) {
+        int width, height;
+        glfwGetWindowSize(window, &width, &height);
+        glm::dvec2 pos{};
+        glfwGetCursorPos(window, &pos.x, &pos.y);
+        pos.x = (2.0 * pos.x) / width - 1.0;
+        pos.y = 1.0 - (2.0 * pos.y) / height;
+        auto state = reinterpret_cast<AppState*>(glfwGetWindowUserPointer(window));
+        state->clicked_pos = state->cam->ViewportToXYPlane(pos);
+    }
+}
 
 int main(int argc, char** argv)
 {
@@ -82,6 +100,10 @@ int main(int argc, char** argv)
         glfwTerminate();
         return 1;
     }
+    AppState state{};
+
+    glfwSetWindowUserPointer(window, reinterpret_cast<void*>(&state));
+    glfwSetMouseButtonCallback(window, mouse_button_callback);
 
     /* Make the window's context current */
     glfwMakeContextCurrent(window);
@@ -93,20 +115,32 @@ int main(int argc, char** argv)
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
-    (void) io;
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 
     ImGui::StyleColorsDark();
-    ImGui_ImplGlfw_InitForOpenGL(window, true);
+    ImGui_ImplGlfw_InitForOpenGL(window, false);
+    glfwSetWindowFocusCallback(window, ImGui_ImplGlfw_WindowFocusCallback);
+    glfwSetCursorEnterCallback(window, ImGui_ImplGlfw_CursorEnterCallback);
+    glfwSetCursorPosCallback(window, ImGui_ImplGlfw_CursorPosCallback);
+    // glfwSetMouseButtonCallback(window, ImGui_ImplGlfw_MouseButtonCallback);
+    glfwSetScrollCallback(window, ImGui_ImplGlfw_ScrollCallback);
+    glfwSetKeyCallback(window, ImGui_ImplGlfw_KeyCallback);
+    glfwSetCharCallback(window, ImGui_ImplGlfw_CharCallback);
+    glfwSetMonitorCallback(ImGui_ImplGlfw_MonitorCallback);
     ImGui_ImplOpenGL3_Init(glsl_version);
 
-    OrthoCamera cam{};
+    state.cam = std::make_unique<OrthoCamera>();
     Shader shader(vertex_shader_code, fragment_shader_code);
     shader.Activate();
 
     shader.SetUniform("model", glm::mat4x4(1.0f));
 
     Gui gui{};
+    std::unique_ptr<DrawableGEOS> geo{nullptr};
+    std::unique_ptr<RenderingMesh> render_mesh{nullptr};
+    std::unique_ptr<polyanya::Mesh> polyanya_mesh{};
+    std::unique_ptr<polyanya::SearchInstance> search{};
+    Path path{};
 
     /* Loop until the user closes the window */
     while(!glfwWindowShouldClose(window)) {
@@ -121,14 +155,47 @@ int main(int argc, char** argv)
             gui.clear_color.z * gui.clear_color.w,
             gui.clear_color.w);
         glClear(GL_COLOR_BUFFER_BIT);
-        if(gui.RecenterOnGeometry() && gui.Geometry() != nullptr) {
-            cam.CenterOn(gui.Geometry()->Bounds());
+        if(gui.RecenterOnGeometry() && geo != nullptr) {
+            state.cam->CenterOn(geo->Bounds());
         }
-        cam.Update(shader);
-        if(gui.RMesh()) {
-            gui.RMesh()->Draw(shader);
+        state.cam->Update(shader);
+
+        if(gui.UpdateGeometry()) {
+            const auto wkt = read_wkt(gui.WktPath());
+            if(wkt) {
+                geo = std::make_unique<DrawableGEOS>(wkt);
+                Mesh m(geo->tri());
+                m.MergeGreedy();
+                auto buf = m.intoLibPolyanyaMeshDescription();
+                polyanya_mesh = std::make_unique<polyanya::Mesh>(buf);
+                search = std::make_unique<polyanya::SearchInstance>(polyanya_mesh.get());
+                search->set_start_goal(
+                    {m.Vertex(0).x, m.Vertex(0).y}, {m.Vertex(1).x, m.Vertex(1).y});
+                search->search();
+                std::vector<polyanya::Point> p{};
+                p.reserve(8);
+                search->get_path_points(p);
+                std::vector<glm::vec2> p2{};
+                p2.reserve(p.size());
+                std::transform(
+                    std::begin(p), std::end(p), std::back_inserter(p2), [](const auto& c) {
+                        std::cout << c.x << " " << c.y << "\n";
+                        return glm::vec2{c.x, c.y};
+                    });
+                std::cout << std::flush;
+                path.Update(p2);
+
+                render_mesh = std::make_unique<RenderingMesh>(m);
+                state.cam->CenterOn(geo->Bounds());
+                state.cam->Update(shader);
+            }
         }
-        gui.Draw();
+
+        if(render_mesh) {
+            render_mesh->Draw(shader);
+        }
+        path.Draw(shader);
+        gui.Draw(state);
 
         if(gui.ShouldExit()) {
             glfwSetWindowShouldClose(window, gui.ShouldExit());

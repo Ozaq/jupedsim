@@ -47,8 +47,8 @@ RenderingMesh::RenderingMesh(const Mesh& data)
 
 RenderingMesh::~RenderingMesh()
 {
+    glDeleteVertexArrays(2, vaos);
     glDeleteBuffers(3, buffer);
-    glDeleteBuffers(2, vaos);
 }
 
 void RenderingMesh::Draw(Shader& shader) const

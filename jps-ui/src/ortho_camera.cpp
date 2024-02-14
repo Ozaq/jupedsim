@@ -1,6 +1,7 @@
 // Copyright © 2024 Forschungszentrum Jülich GmbH
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #include "ortho_camera.hpp"
+#include "glm/matrix.hpp"
 
 #include <glm/ext/matrix_clip_space.hpp>
 #include <glm/ext/matrix_transform.hpp>
@@ -37,12 +38,20 @@ void OrthoCamera::ChangeViewport(float width, float height)
 void OrthoCamera::Update(Shader& shader)
 {
     if(dirty) {
-        view = glm::lookAt(eye, center, up);
+        const auto view = glm::lookAt(eye, center, up);
         const float frustrum_half_height = frustrum_half_width * (1 / aspect);
-        projection = glm::ortho(
+        const auto projection = glm::ortho(
             -frustrum_half_width, frustrum_half_width, -frustrum_half_height, frustrum_half_height);
+        view_projection = projection * view;
+        view_projection_inv = glm::inverse(view_projection);
         dirty = false;
     }
-    shader.SetUniform("view", view);
-    shader.SetUniform("projection", projection);
+    shader.SetUniform("view_projection", view_projection);
+}
+
+glm::dvec2 OrthoCamera::ViewportToXYPlane(glm::dvec2 pos) const
+{
+    glm::vec4 pos4{pos, 0, 1};
+    const auto world_pos = view_projection_inv * pos4;
+    return {world_pos.x, world_pos.y};
 }
