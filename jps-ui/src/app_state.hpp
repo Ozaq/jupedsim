@@ -9,4 +9,6 @@
 struct AppState {
     std::unique_ptr<OrthoCamera> cam{};
     glm::dvec2 clicked_pos{};
+    std::optional<glm::dvec2> from{};
+    std::optional<glm::dvec2> to{};
 };

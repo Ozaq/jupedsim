@@ -64,7 +64,7 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
     ImGuiIO& io = ImGui::GetIO();
     io.AddMouseButtonEvent(button, action == GLFW_PRESS);
 
-    if(!io.WantCaptureMouse) {
+    if(!io.WantCaptureMouse && action == GLFW_RELEASE) {
         int width, height;
         glfwGetWindowSize(window, &width, &height);
         glm::dvec2 pos{};
@@ -73,6 +73,13 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
         pos.y = 1.0 - (2.0 * pos.y) / height;
         auto state = reinterpret_cast<AppState*>(glfwGetWindowUserPointer(window));
         state->clicked_pos = state->cam->ViewportToXYPlane(pos);
+
+        if(!state->from || state->to) {
+            state->to = std::nullopt;
+            state->from = state->clicked_pos;
+        } else {
+            state->to = state->clicked_pos;
+        }
     }
 }
 
@@ -141,6 +148,7 @@ int main(int argc, char** argv)
     std::unique_ptr<polyanya::Mesh> polyanya_mesh{};
     std::unique_ptr<polyanya::SearchInstance> search{};
     Path path{};
+    path.Update(std::vector<glm::vec2>{{-0.5, 0}, {0.5, 0}});
 
     /* Loop until the user closes the window */
     while(!glfwWindowShouldClose(window)) {
@@ -169,26 +177,29 @@ int main(int argc, char** argv)
                 auto buf = m.intoLibPolyanyaMeshDescription();
                 polyanya_mesh = std::make_unique<polyanya::Mesh>(buf);
                 search = std::make_unique<polyanya::SearchInstance>(polyanya_mesh.get());
-                search->set_start_goal(
-                    {m.Vertex(0).x, m.Vertex(0).y}, {m.Vertex(1).x, m.Vertex(1).y});
-                search->search();
-                std::vector<polyanya::Point> p{};
-                p.reserve(8);
-                search->get_path_points(p);
-                std::vector<glm::vec2> p2{};
-                p2.reserve(p.size());
-                std::transform(
-                    std::begin(p), std::end(p), std::back_inserter(p2), [](const auto& c) {
-                        std::cout << c.x << " " << c.y << "\n";
-                        return glm::vec2{c.x, c.y};
-                    });
-                std::cout << std::flush;
-                path.Update(p2);
 
                 render_mesh = std::make_unique<RenderingMesh>(m);
                 state.cam->CenterOn(geo->Bounds());
                 state.cam->Update(shader);
             }
+        }
+
+        if(search && state.from && state.to) {
+            search->set_start_goal({state.from->x, state.from->y}, {state.to->x, state.to->y});
+            search->search();
+            std::vector<polyanya::Point> p{};
+            p.reserve(8);
+            search->get_path_points(p);
+            std::vector<glm::vec2> p2{};
+            p2.reserve(p.size());
+            std::transform(std::begin(p), std::end(p), std::back_inserter(p2), [](const auto& c) {
+                return glm::vec2{c.x, c.y};
+            });
+            std::cout << std::flush;
+            path.Update(p2);
+        }
+        if(!state.to.has_value()) {
+            path.Update({});
         }
 
         if(render_mesh) {

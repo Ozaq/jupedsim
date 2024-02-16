@@ -104,6 +104,16 @@ void Gui::Draw(const AppState& state)
         state.cam->ViewProjection()[3][2],
         state.cam->ViewProjection()[3][3]);
     ImGui::Text("Clicked @ {%f, %f}", state.clicked_pos.x, state.clicked_pos.y);
+    if(state.from) {
+        ImGui::Text("From {%f, %f}", state.from->x, state.from->y);
+    } else {
+        ImGui::Text("From { -, -}");
+    }
+    if(state.to) {
+        ImGui::Text("To {%f, %f}", state.to->x, state.to->y);
+    } else {
+        ImGui::Text("To { -, -}");
+    }
 
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

@@ -35,7 +35,7 @@ void Path::Update(const std::vector<glm::vec2>& coordinates)
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(glm::vec2), nullptr);
     glEnableVertexAttribArray(0);
 
-    std::vector<size_t> indices{};
+    std::vector<uint16_t> indices{};
     if(coordinates.size() > 1) {
         indices.reserve(coordinates.size() - 1 * 2);
         for(size_t index = 1; index < coordinates.size(); ++index) {
@@ -47,18 +47,15 @@ void Path::Update(const std::vector<glm::vec2>& coordinates)
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer[1]);
     glBufferData(
         GL_ELEMENT_ARRAY_BUFFER,
-        index_count * sizeof(size_t),
+        index_count * sizeof(uint16_t),
         reinterpret_cast<const GLvoid*>(indices.data()),
         GL_DYNAMIC_DRAW);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
 void Path::Draw(Shader& shader) const
 {
     shader.Activate();
-
-    shader.SetUniform("color", glm::vec4(1.0f, 1.0f, 0.75f, 1.0f));
-
+    shader.SetUniform("color", glm::vec4(0.8f, 0.0f, 0.0f, 1.0f));
     glBindVertexArray(vao);
     glDrawElements(GL_LINES, index_count, GL_UNSIGNED_SHORT, nullptr);
 }
