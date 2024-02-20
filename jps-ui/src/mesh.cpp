@@ -80,14 +80,10 @@ Mesh::Mesh(const CDT& cdt)
 void Mesh::MergeGreedy()
 {
     DisjointSet djs{polygons.size()};
-    // 1) Merge polygons with only one nieghbor, aka "dead-ends"
     mergeDeadEnds(djs);
-    // 2) "Smart" merge remaining polygons
     smartMerge(true);
-    // 3) Validate correctness
-
     trimEmptyPolygons();
-
+    assert(isValid());
     updateBoundingBoxes();
 }
 
@@ -319,6 +315,11 @@ bool Mesh::isMergable(
 
 bool Mesh::isValid() const
 {
+    for(const auto& p : polygons) {
+        if(!isConvex(p.vertices)) {
+            return false;
+        }
+    }
     return true;
 }
 
@@ -492,7 +493,10 @@ void Mesh::trimEmptyPolygons()
 
     for(auto& p : trimed_polygons) {
         for(auto& n : p.neighbors) {
-            n = index_mapping[n];
+            const auto iter = index_mapping.find(n);
+            if(iter != std::end(index_mapping)) {
+                n = iter->second;
+            }
         }
     }
     polygons = trimed_polygons;
@@ -632,7 +636,7 @@ std::stringstream Mesh::intoLibPolyanyaMeshDescription() const
             buf << toPolyanyaIndex(v) << " ";
         }
         for(size_t idx = 0; idx < p.neighbors.size(); ++idx) {
-            const size_t shifted_idx = (idx + 1) % p.neighbors.size();
+            const size_t shifted_idx = (idx + p.neighbors.size() - 1) % p.neighbors.size();
             const auto n = p.neighbors[shifted_idx];
             buf << toPolyanyaIndex(n) << " ";
         }

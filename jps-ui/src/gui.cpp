@@ -114,6 +114,9 @@ void Gui::Draw(const AppState& state)
     } else {
         ImGui::Text("To { -, -}");
     }
+    ImGui::Begin("Mesh Description");
+    ImGui::TextUnformatted(state.mesh_text.c_str());
+    ImGui::End();
 
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

@@ -175,6 +175,7 @@ int main(int argc, char** argv)
                 Mesh m(geo->tri());
                 m.MergeGreedy();
                 auto buf = m.intoLibPolyanyaMeshDescription();
+                state.mesh_text = buf.str();
                 polyanya_mesh = std::make_unique<polyanya::Mesh>(buf);
                 search = std::make_unique<polyanya::SearchInstance>(polyanya_mesh.get());
 
