@@ -44,7 +44,7 @@ void Routing::AddDistanceMapForStage(const BaseStage::ID id, const Point& p)
 
     // HACK(kkratz):
     distance::DumpDistanceMap<int, float>(_distanceMaps[id]->Distance());
-    distance::DumpDistanceMapMatplotlibCSV(_distanceMaps[id]->Distance(), id.getID());
+    //distance::DumpDistanceMapMatplotlibCSV(_distanceMaps[id]->Distance(), id.getID());
 }
 
 void Routing::AddDistanceMapForStage(const BaseStage::ID id, const Polygon& p)
@@ -54,7 +54,7 @@ void Routing::AddDistanceMapForStage(const BaseStage::ID id, const Polygon& p)
     _distanceMaps.emplace(id, builder->Build());
     // HACK(kkratz):
     distance::DumpDistanceMap<int, float>(_distanceMaps[id]->Distance());
-    distance::DumpDistanceMapMatplotlibCSV(_distanceMaps[id]->Distance(), id.getID());
+    //distance::DumpDistanceMapMatplotlibCSV(_distanceMaps[id]->Distance(), id.getID());
 }
 
 std::unique_ptr<Routing::DMapBuilder> Routing::PrepareDistanceMapBuilder() const
