@@ -33,6 +33,7 @@ struct Arc {
     Real endAngle;
 };
 
+/// Axis Aligned Bounding Box
 template <Real Real>
 class AABB
 {
@@ -51,7 +52,7 @@ public:
 
     Real Height() const { return upper_right.y - lower_left.y; }
 
-    Point<Real> TopLeft() const { return {lower_left.x, upper_right.y}; }
+    Point<Real> LowerLeft() const { return {lower_left.x, lower_left.y}; }
 };
 
 template <Real Real>
@@ -60,6 +61,7 @@ struct Circle {
     Real radius;
 };
 
+// TODO(kkratz): move into grid?
 struct GridIndex {
     uint64_t x{};
     uint64_t y{};

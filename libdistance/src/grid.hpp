@@ -4,6 +4,7 @@
 
 #include <cassert>
 #include <span>
+#include <sstream>
 
 namespace distance
 {
@@ -46,6 +47,20 @@ public:
     std::span<const T> Data() const { return std::span{data}; };
 
     uint64_t Size() const { return data.size(); }
+
+    std::string DumpCSV() const
+    {
+        std::stringstream buf{};
+        for(int linear_index = 0; linear_index < data.size(); ++linear_index) {
+            buf << data[linear_index];
+            if((linear_index + 1) % width == 0) {
+                buf << '\n';
+            } else {
+                buf << ',';
+            }
+        }
+        return buf.str();
+    }
 };
 
 } // namespace distance

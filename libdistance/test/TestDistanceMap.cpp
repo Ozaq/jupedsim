@@ -1,6 +1,7 @@
 // Copyright © 2012-2024 Forschungszentrum Jülich GmbH
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #include <common_types.hpp>
+#include <fmt/format.h>
 #include <grid.hpp>
 #include <gtest/gtest.h>
 #include <raster_map.hpp>
@@ -60,6 +61,58 @@ TEST(RasterMap, CanConstruct2)
     for(int x = 0; x < 7; ++x) {
         for(int y = 0; y < 7; ++y) {
             ASSERT_EQ(map.At({p.x + 0.3 * x, p.y - 0.3 * y}), x + y * 7);
+        }
+    }
+}
+
+TEST(RasterMap, CanMarkAxisAlignedSquare)
+{
+    using RMap = distance::RasterMap<double, int>;
+    using AABB = distance::AABB<double>;
+    using Poly = RMap::PolygonT;
+    const auto cell_size = 0.3;
+    AABB bounds{{-1.0, -1.0}, {1.0, 1.0}};
+    RMap map{bounds, cell_size};
+    const auto marker{1};
+
+    map.MarkPolygon({{-0.5, -0.5}, {0.5, -0.5}, {0.5, 0.5}, {-0.5, 0.5}}, marker);
+    fmt::println("{}", map.Grid().DumpCSV());
+    const auto base = 1.0;
+    const auto increment = 0.1;
+    for(int step_x = 0; (base + step_x * increment) <= 1.0; ++step_x) {
+        const auto x = base + step_x * increment;
+        for(int step_y = 0; (base + step_y * increment) <= 1.0; ++step_y) {
+            const auto y = base + step_y * increment;
+            const auto expected = (x >= -0.7 && x <= 0.5 && y >= -0.7 && y <= 0.5) ? marker : 0;
+            const auto gi = map.gridIndex({x, y});
+            fmt::println("Pt {{{},{}}} / Idx {{{},{}}} / Val {}", x, y, gi.x, gi.y, map.At({x, y}));
+            ASSERT_EQ(map.At({x, y}), expected);
+        }
+    }
+}
+
+TEST(RasterMap, CanMarkRhombus)
+{
+    using RMap = distance::RasterMap<double, int>;
+    using AABB = distance::AABB<double>;
+    using Poly = RMap::PolygonT;
+    const auto cell_size = 0.1;
+    AABB bounds{{-1.05, -1.05}, {1.05, 1.05}};
+    RMap map{bounds, cell_size};
+    const auto marker{1};
+
+    map.MarkPolygon({{0, -0.9}, {0.3, -0}, {0, 0.9}, {-0.3, 0}}, marker);
+    fmt::println("{}", map.Grid().DumpCSV());
+    const auto base = 1.0;
+    const auto increment = 0.1;
+    for(int step_x = 0; (base + step_x * increment) <= 1.0; ++step_x) {
+        const auto x = base + step_x * increment;
+        for(int step_y = 0; (base + step_y * increment) <= 1.0; ++step_y) {
+            const auto y = base + step_y * increment;
+            const auto expected = (x >= -0.7 && x <= 0.5 && y >= -0.7 && y <= 0.5) ? marker : 0;
+            const auto gi = map.gridIndex({x, y});
+            fmt::println("Pt {{{},{}}} / Idx {{{},{}}} / Val {}", x, y, gi.x, gi.y, map.At({x, y}));
+            ASSERT_EQ(map.At({x, y}), expected);
         }
     }
 }
