@@ -8,6 +8,7 @@ target_link_libraries(py_distance
         pybind11::lto
         pybind11::windows_extras
         fmt::fmt
+        distance
 )
 
 pybind11_extension(py_distance)
