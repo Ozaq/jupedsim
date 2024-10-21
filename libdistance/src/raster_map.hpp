@@ -78,8 +78,8 @@ public:
 
         int64_t error = dx + dy, e2; // Initial error term
 
-        int64_t i = p1_idx.x;
-        int64_t j = p1_idx.y;
+        uint64_t i = p1_idx.x;
+        uint64_t j = p1_idx.y;
 
         while(true) {
             if(i >= 0 && i < static_cast<int64_t>(xDim) && j >= 0 && j < yDim) {
@@ -155,7 +155,7 @@ public:
 
     CellT& At(Point<Real> point) { return grid.At(gridIndex(point)); }
 
-    const GridT& Grid() { return grid; }
+    const GridT& Grid() const { return grid; }
 
     GridIndex gridIndex(Point<Real> point) const
     {

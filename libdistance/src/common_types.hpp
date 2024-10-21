@@ -41,11 +41,10 @@ class AABB
     Point<Real> upper_right;
 
 public:
-    AABB(Point<Real> _lower_left, Point<Real> _upper_right)
-        : lower_left(_lower_left), upper_right(_upper_right)
+    AABB(Point<Real> a, Point<Real> b)
+        : lower_left(std::min(a.x, b.x), std::min(a.y, b.y))
+        , upper_right(std::max(a.x, b.x), std::max(a.y, b.y))
     {
-        assert(lower_left.x <= upper_right.x);
-        assert(lower_left.y <= upper_right.y);
     }
 
     Real Width() const { return upper_right.x - lower_left.x; }
