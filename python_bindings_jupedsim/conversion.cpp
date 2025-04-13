@@ -4,12 +4,12 @@
 #include <algorithm>
 #include <iterator>
 
-std::tuple<double, double> intoTuple(const JPS_Point& p)
+std::tuple<double, double> intoTuple(const Point& p)
 {
     return std::make_tuple(p.x, p.y);
 }
 
-std::vector<std::tuple<double, double>> intoTuple(const std::vector<JPS_Point>& p)
+std::vector<std::tuple<double, double>> intoTuple(const std::vector<Point>& p)
 {
     std::vector<std::tuple<double, double>> res;
     res.reserve(p.size());
@@ -18,7 +18,7 @@ std::vector<std::tuple<double, double>> intoTuple(const std::vector<JPS_Point>& 
     return res;
 }
 
-std::vector<std::tuple<double, double>> intoTuple(const JPS_Point* beg, const JPS_Point* end)
+std::vector<std::tuple<double, double>> intoTuple(const Point* beg, const Point* end)
 {
     std::vector<std::tuple<double, double>> res;
     res.reserve(end - beg);
@@ -26,14 +26,14 @@ std::vector<std::tuple<double, double>> intoTuple(const JPS_Point* beg, const JP
     return res;
 }
 
-JPS_Point intoJPS_Point(const std::tuple<double, double> p)
+Point intoJPS_Point(const std::tuple<double, double> p)
 {
-    return JPS_Point{std::get<0>(p), std::get<1>(p)};
+    return Point{std::get<0>(p), std::get<1>(p)};
 };
 
-std::vector<JPS_Point> intoJPS_Point(const std::vector<std::tuple<double, double>>& p)
+std::vector<Point> intoJPS_Point(const std::vector<std::tuple<double, double>>& p)
 {
-    std::vector<JPS_Point> res;
+    std::vector<Point> res;
     res.reserve(p.size());
     std::transform(std::begin(p), std::end(p), std::back_inserter(res), [](auto&& x) {
         return intoJPS_Point(x);

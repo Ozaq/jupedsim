@@ -54,6 +54,9 @@ if(WITH_FORMAT AND ${CMAKE_SYSTEM} MATCHES "Windows")
     message(FATAL_ERROR "Format target not supported on Windows")
 endif()
 
+option(JPS_CLANG_FORMAT_ROOT "Location of clang-format" "")
+print_var(JPS_CLANG_FORMAT_ROOT)
+
 ################################################################################
 # Compilation flags
 ################################################################################
@@ -183,17 +186,11 @@ if(BUILD_TESTS)
                 --junit-xml=result-systemtests.xml
         DEPENDS py_jupedsim
     )
-    set(unittests_dependency_list libjupedsim-unittests libsimulator-unittests)
+    set(unittests_dependency_list libsimulator-unittests)
     add_custom_target(unittests
         DEPENDS ${unittests_dependency_list}
     )
 
-    add_custom_target(libjupedsim-unittests
-        COMMENT "Running libjupedsim unittests"
-        COMMAND $<TARGET_FILE:libjupedsim-tests>
-                --gtest_output=xml:result-libjupedsim-unittests.xml
-        DEPENDS libjupedsim-tests
-    )
     add_custom_target(libsimulator-unittests
         COMMENT "Running unit tests"
         COMMAND $<TARGET_FILE:libsimulator-tests>
@@ -215,7 +212,6 @@ endif()
 ################################################################################
 # Add libraries / executables
 ################################################################################
-add_subdirectory(libjupedsim)
 add_subdirectory(libcommon)
 add_subdirectory(libsimulator)
 add_subdirectory(python_bindings_jupedsim)
@@ -225,12 +221,26 @@ add_subdirectory(python_bindings_jupedsim)
 ################################################################################
 if(UNIX AND WITH_FORMAT)
     set(clang-format-version 19)
-    find_program(CLANG_FORMAT
-        NAMES
-            clang-format-${clang-format-version}
-            clang-format
-        REQUIRED
-    )
+    if(JPS_CLANG_FORMAT_ROOT STREQUAL "")
+        message(status "Trying to find clang-format in default locations")
+        find_program(CLANG_FORMAT
+            NAMES
+                clang-format-${clang-format-version}
+                clang-format
+            REQUIRED
+        )
+    else()
+        message(status "Trying to find clang-format in user defined location ${JPS_CLANG_FORMAT_ROOT}")
+        find_program(CLANG_FORMAT
+            NAMES
+                clang-format-${clang-format-version}
+                clang-format
+            PATHS
+                ${JPS_CLANG_FORMAT_ROOT}
+            NO_DEFAULT_PATH
+            REQUIRED
+        )
+    endif()
     if(CLANG_FORMAT)
         execute_process(
             COMMAND ${CLANG_FORMAT} --version
@@ -247,7 +257,7 @@ if(UNIX AND WITH_FORMAT)
             )
             if(version MATCHES "^${clang-format-version}.*")
                 message(STATUS "Found clang-format ${version}, add format-check and reformat targets")
-                set(folders libcommon libjupedsim libsimulator)
+                set(folders libcommon libsimulator)
                 add_custom_target(check-format
                     COMMENT "Checking format with clang-format"
                     COMMAND find ${folders}

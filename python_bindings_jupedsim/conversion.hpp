@@ -1,16 +1,17 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #pragma once
-#include <jupedsim/jupedsim.h>
+
+#include <Point.hpp>
 
 #include <tuple>
 #include <vector>
 
-std::tuple<double, double> intoTuple(const JPS_Point& p);
+std::tuple<double, double> intoTuple(const Point& p);
 
-std::vector<std::tuple<double, double>> intoTuple(const std::vector<JPS_Point>& p);
+std::vector<std::tuple<double, double>> intoTuple(const std::vector<Point>& p);
 
-std::vector<std::tuple<double, double>> intoTuple(const JPS_Point* beg, const JPS_Point* end);
+std::vector<std::tuple<double, double>> intoTuple(const Point* beg, const Point* end);
 
-JPS_Point intoJPS_Point(const std::tuple<double, double> p);
+Point intoJPS_Point(const std::tuple<double, double> p);
 
-std::vector<JPS_Point> intoJPS_Point(const std::vector<std::tuple<double, double>>& p);
+std::vector<Point> intoJPS_Point(const std::vector<std::tuple<double, double>>& p);

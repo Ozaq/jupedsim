@@ -1,12 +1,15 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
+#include "GenericAgent.hpp"
 #include "conversion.hpp"
-#include "wrapper.hpp"
-
 #include <Unreachable.hpp>
-#include <jupedsim/jupedsim.h>
-
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
+
+#include <AnticipationVelocityModel.hpp>
+#include <CollisionFreeSpeedModel.hpp>
+#include <CollisionFreeSpeedModelV2.hpp>
+#include <GeneralizedCentrifugalForceModel.hpp>
+#include <SocialForceModel.hpp>
 
 namespace py = pybind11;
 
@@ -34,43 +37,33 @@ void init_agent(py::module_& m)
             }
             throw py::stop_iteration{};
         });
-    py::class_<JPS_Agent_Wrapper>(m, "Agent")
+    py::class_<GenericAgent>(m, "Agent")
+        .def_property_readonly("id", [](const GenericAgent& agent) { agent.id.getID(); })
         .def_property_readonly(
-            "id", [](const JPS_Agent_Wrapper& w) { return JPS_Agent_GetId(w.handle); })
+            "journey_id", [](const GenericAgent& agent) { return agent.journeyId.getID(); })
         .def_property_readonly(
-            "journey_id",
-            [](const JPS_Agent_Wrapper& w) { return JPS_Agent_GetJourneyId(w.handle); })
+            "stage_id", [](const GenericAgent& agent) { return agent.stageId.getID(); })
         .def_property_readonly(
-            "stage_id", [](const JPS_Agent_Wrapper& w) { return JPS_Agent_GetStageId(w.handle); })
+            "position", [](const GenericAgent& agent) { return intoTuple(agent.position); })
         .def_property_readonly(
-            "position",
-            [](const JPS_Agent_Wrapper& w) { return intoTuple(JPS_Agent_GetPosition(w.handle)); })
-        .def_property_readonly(
-            "orientation",
-            [](const JPS_Agent_Wrapper& w) {
-                return intoTuple(JPS_Agent_GetOrientation(w.handle));
-            })
+            "orientation", [](const GenericAgent& agent) { return intoTuple(agent.orientation); })
         .def_property(
             "target",
-            [](const JPS_Agent_Wrapper& w) { return intoTuple(JPS_Agent_GetTarget(w.handle)); },
-            [](JPS_Agent_Wrapper& w, std::tuple<double, double> target) {
-                JPS_ErrorMessage errorMsg{};
-                auto success = JPS_Agent_SetTarget(w.handle, intoJPS_Point(target), &errorMsg);
-                if(!success) {
-                    auto msg = std::string(JPS_ErrorMessage_GetMessage(errorMsg));
-                    JPS_ErrorMessage_Free(errorMsg);
-                    throw std::runtime_error{msg};
-                }
+            [](const GenericAgent& agent) { return intoTuple(agent.target); },
+            [](GenericAgent& agent, std::tuple<double, double> target) {
+                agent.target = intoJPS_Point(target);
             })
         .def_property_readonly(
             "model",
-            [](const JPS_Agent_Wrapper& w)
+            [](const GenericAgent& agnet)
                 -> std::variant<
-                    std::unique_ptr<JPS_GeneralizedCentrifugalForceModelState_Wrapper>,
-                    std::unique_ptr<JPS_CollisionFreeSpeedModelState_Wrapper>,
-                    std::unique_ptr<JPS_CollisionFreeSpeedModelV2State_Wrapper>,
-                    std::unique_ptr<JPS_AnticipationVelocityModelState_Wrapper>,
-                    std::unique_ptr<JPS_SocialForceModelState_Wrapper>> {
+                    std::unique_ptr<GeneralizedCentrifugalForceModelState>,
+                    std::unique_ptr<CollisionFreeSpeedModelState>,
+                    std::unique_ptr<CollisionFreeSpeedModelV2State>,
+                    std::unique_ptr<AnticipationVelocityModelState>,
+                    std::unique_ptr<SocialForceModelState>>
+
+            {
                 switch(JPS_Agent_GetModelType(w.handle)) {
                     case JPS_GeneralizedCentrifugalForceModel:
                         return std::make_unique<JPS_GeneralizedCentrifugalForceModelState_Wrapper>(
