@@ -5,6 +5,11 @@
 #include <Unreachable.hpp>
 #include <jupedsim/jupedsim.h>
 
+#include <CollisionGeometry.hpp>
+#include <OperationalModel.hpp>
+#include <Simulation.hpp>
+#include <Stage.hpp>
+
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
@@ -12,83 +17,39 @@ namespace py = pybind11;
 
 void init_simulation(py::module_& m)
 {
-    py::class_<JPS_OperationalModel_Wrapper>(m, "OperationalModel");
-    py::class_<JPS_Simulation_Wrapper>(m, "Simulation")
+    py::class_<OperationalModel>(m, "OperationalModel");
+    py::class_<Simulation>(m, "Simulation")
         .def(
-            py::init(
-                [](JPS_OperationalModel_Wrapper& model, JPS_Geometry_Wrapper& geometry, double dT) {
-                    JPS_ErrorMessage errorMsg{};
-                    auto result =
-                        JPS_Simulation_Create(model.handle, geometry.handle, dT, &errorMsg);
-                    if(result) {
-                        return std::make_unique<JPS_Simulation_Wrapper>(result);
-                    }
-                    auto msg = std::string(JPS_ErrorMessage_GetMessage(errorMsg));
-                    JPS_ErrorMessage_Free(errorMsg);
-                    throw std::runtime_error{msg};
-                }),
+            py::init([](const OperationalModel* model, CollisionGeometry geometry, double dT) {
+                return Simulation(
+                    model->Clone(), std::make_unique<CollisionGeometry>(geometry), dT);
+            }),
             py::kw_only(),
             py::arg("model"),
             py::arg("geometry"),
             py::arg("dt"))
         .def(
             "add_waypoint_stage",
-            [](JPS_Simulation_Wrapper& w, std::tuple<double, double> position, double distance) {
-                JPS_ErrorMessage errorMsg{};
-                const auto result = JPS_Simulation_AddStageWaypoint(
-                    w.handle, intoJPS_Point(position), distance, &errorMsg);
-                if(result != 0) {
-                    return result;
-                }
-                auto msg = std::string(JPS_ErrorMessage_GetMessage(errorMsg));
-                JPS_ErrorMessage_Free(errorMsg);
-                throw std::runtime_error{msg};
+            [](Simulation& sim, Point position, double distance) {
+                return sim.AddStage(WaypointDescription{position, distance}).getID();
             })
         .def(
             "add_queue_stage",
-            [](JPS_Simulation_Wrapper& w,
-               const std::vector<std::tuple<double, double>>& positions) {
-                JPS_ErrorMessage errorMsg{};
-                const auto jpsPointPositions = intoJPS_Point(positions);
-                const auto result = JPS_Simulation_AddStageNotifiableQueue(
-                    w.handle, jpsPointPositions.data(), jpsPointPositions.size(), &errorMsg);
-                if(result != 0) {
-                    return result;
-                }
-                auto msg = std::string(JPS_ErrorMessage_GetMessage(errorMsg));
-                JPS_ErrorMessage_Free(errorMsg);
-                throw std::runtime_error{msg};
+            [](Simulation& sim, const std::vector<Point>& positions) {
+                return sim.AddStage(NotifiableQueueDescription{positions}).getID();
             })
         .def(
             "add_waiting_set_stage",
-            [](JPS_Simulation_Wrapper& w,
-               const std::vector<std::tuple<double, double>>& positions) {
-                JPS_ErrorMessage errorMsg{};
-                const auto jpsPointPositions = intoJPS_Point(positions);
-                const auto result = JPS_Simulation_AddStageWaitingSet(
-                    w.handle, jpsPointPositions.data(), jpsPointPositions.size(), &errorMsg);
-                if(result != 0) {
-                    return result;
-                }
-                auto msg = std::string(JPS_ErrorMessage_GetMessage(errorMsg));
-                JPS_ErrorMessage_Free(errorMsg);
-                throw std::runtime_error{msg};
+            [](Simulation& sim, const std::vector<Point>& positions) {
+                return sim.AddStage(NotifiableWaitingSetDescription{positions}).getID();
             })
         .def(
             "add_exit_stage",
-            [](JPS_Simulation_Wrapper& w, const std::vector<std::tuple<double, double>>& polygon) {
-                JPS_ErrorMessage errorMsg{};
-                const auto jpsPointPoly = intoJPS_Point(polygon);
-                const auto result = JPS_Simulation_AddStageExit(
-                    w.handle, jpsPointPoly.data(), jpsPointPoly.size(), &errorMsg);
-                if(result != 0) {
-                    return result;
-                }
-                auto msg = std::string(JPS_ErrorMessage_GetMessage(errorMsg));
-                JPS_ErrorMessage_Free(errorMsg);
-                throw std::runtime_error{msg};
+            [](Simulation& sim, const std::vector<Point>& polygon) {
+                return sim.AddStage(ExitDescription{Polygon{polygon}}).getID();
             })
         .def(
+            /// TODO(kkratz): CONTINUE HERE YOU MUPPET! :D
             "add_direct_steering_stage",
             [](JPS_Simulation_Wrapper& w) {
                 JPS_ErrorMessage errorMsg{};
