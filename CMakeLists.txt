@@ -219,6 +219,7 @@ add_subdirectory(libjupedsim)
 add_subdirectory(libcommon)
 add_subdirectory(libsimulator)
 add_subdirectory(python_bindings_jupedsim)
+add_subdirectory(python_bindings_jupedsim_v2)
 
 ################################################################################
 # Code formatting
