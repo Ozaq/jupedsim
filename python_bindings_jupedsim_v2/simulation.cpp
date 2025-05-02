@@ -21,7 +21,7 @@ void init_simulation(py::module_& m)
     py::class_<Simulation>(m, "Simulation")
         .def(
             py::init([](const OperationalModel* model, CollisionGeometry geometry, double dT) {
-                return Simulation(
+                return std::make_unique<Simulation>(
                     model->Clone(), std::make_unique<CollisionGeometry>(geometry), dT);
             }),
             py::kw_only(),
@@ -51,203 +51,54 @@ void init_simulation(py::module_& m)
         .def(
             /// TODO(kkratz): CONTINUE HERE YOU MUPPET! :D
             "add_direct_steering_stage",
-            [](JPS_Simulation_Wrapper& w) {
-                JPS_ErrorMessage errorMsg{};
-                const auto result = JPS_Simulation_AddStageDirectSteering(w.handle, &errorMsg);
-                if(result != 0) {
-                    return result;
-                }
-                auto msg = std::string(JPS_ErrorMessage_GetMessage(errorMsg));
-                JPS_ErrorMessage_Free(errorMsg);
-                throw std::runtime_error{msg};
-            })
+            [](Simulation& sim) { return sim.AddStage(DirectSteeringDescription{}).getID(); })
         .def(
             "add_journey",
-            [](JPS_Simulation_Wrapper& simulation, JPS_JourneyDescription_Wrapper& journey) {
-                JPS_ErrorMessage errorMsg{};
-                const auto result =
-                    JPS_Simulation_AddJourney(simulation.handle, journey.handle, &errorMsg);
-                if(result != 0) {
-                    return result;
-                }
-                auto msg = std::string(JPS_ErrorMessage_GetMessage(errorMsg));
-                JPS_ErrorMessage_Free(errorMsg);
-                throw std::runtime_error{msg};
+            [](Simulation& sim, std::map<BaseStage::ID, TransitionDescription>& journey) {
+                return sim.AddJourney(journey).getID();
             })
         .def(
             "add_agent",
-            [](JPS_Simulation_Wrapper& simulation,
-               JPS_GeneralizedCentrifugalForceModelAgentParameters& parameters) {
-                JPS_ErrorMessage errorMsg{};
-                auto result = JPS_Simulation_AddGeneralizedCentrifugalForceModelAgent(
-                    simulation.handle, parameters, &errorMsg);
-                if(result) {
-                    return result;
-                }
-                auto msg = std::string(JPS_ErrorMessage_GetMessage(errorMsg));
-                JPS_ErrorMessage_Free(errorMsg);
-                throw std::runtime_error{msg};
-            })
-        .def(
-            "add_agent",
-            [](JPS_Simulation_Wrapper& simulation,
-               JPS_CollisionFreeSpeedModelAgentParameters& parameters) {
-                JPS_ErrorMessage errorMsg{};
-                auto result = JPS_Simulation_AddCollisionFreeSpeedModelAgent(
-                    simulation.handle, parameters, &errorMsg);
-                if(result) {
-                    return result;
-                }
-                auto msg = std::string(JPS_ErrorMessage_GetMessage(errorMsg));
-                JPS_ErrorMessage_Free(errorMsg);
-                throw std::runtime_error{msg};
-            })
-        .def(
-            "add_agent",
-            [](JPS_Simulation_Wrapper& simulation,
-               JPS_CollisionFreeSpeedModelV2AgentParameters& parameters) {
-                JPS_ErrorMessage errorMsg{};
-                auto result = JPS_Simulation_AddCollisionFreeSpeedModelV2Agent(
-                    simulation.handle, parameters, &errorMsg);
-                if(result) {
-                    return result;
-                }
-                auto msg = std::string(JPS_ErrorMessage_GetMessage(errorMsg));
-                JPS_ErrorMessage_Free(errorMsg);
-                throw std::runtime_error{msg};
-            })
-        .def(
-            "add_agent",
-            [](JPS_Simulation_Wrapper& simulation,
-               JPS_AnticipationVelocityModelAgentParameters& parameters) {
-                JPS_ErrorMessage errorMsg{};
-                auto result = JPS_Simulation_AddAnticipationVelocityModelAgent(
-                    simulation.handle, parameters, &errorMsg);
-                if(result) {
-                    return result;
-                }
-                auto msg = std::string(JPS_ErrorMessage_GetMessage(errorMsg));
-                JPS_ErrorMessage_Free(errorMsg);
-                throw std::runtime_error{msg};
-            })
-        .def(
-            "add_agent",
-            [](JPS_Simulation_Wrapper& simulation,
-               JPS_SocialForceModelAgentParameters& parameters) {
-                JPS_ErrorMessage errorMsg{};
-                auto result = JPS_Simulation_AddSocialForceModelAgent(
-                    simulation.handle, parameters, &errorMsg);
-                if(result) {
-                    return result;
-                }
-                auto msg = std::string(JPS_ErrorMessage_GetMessage(errorMsg));
-                JPS_ErrorMessage_Free(errorMsg);
-                throw std::runtime_error{msg};
-            })
+            [](Simulation& sim, GenericAgent& agent) { return sim.AddAgent(agent).getID(); })
         .def(
             "mark_agent_for_removal",
-            [](JPS_Simulation_Wrapper& simulation, JPS_AgentId id) {
-                JPS_ErrorMessage errorMsg{};
-                auto result = JPS_Simulation_MarkAgentForRemoval(simulation.handle, id, &errorMsg);
-                if(result) {
-                    return result;
-                }
-                auto msg = std::string(JPS_ErrorMessage_GetMessage(errorMsg));
-                JPS_ErrorMessage_Free(errorMsg);
-                throw std::runtime_error{msg};
-            })
-        .def(
-            "removed_agents",
-            [](const JPS_Simulation_Wrapper& simulation) {
-                const JPS_AgentId* ids{};
-                const auto count = JPS_Simulation_RemovedAgents(simulation.handle, &ids);
-                return std::vector<JPS_AgentId>{ids, ids + count};
-            })
-        .def(
-            "iterate",
-            [](const JPS_Simulation_Wrapper& simulation) {
-                JPS_ErrorMessage errorMsg{};
-                bool iterate_ok = JPS_Simulation_Iterate(simulation.handle, &errorMsg);
-                if(iterate_ok) {
-                    return;
-                }
-                auto msg = std::string(JPS_ErrorMessage_GetMessage(errorMsg));
-                JPS_ErrorMessage_Free(errorMsg);
-                throw std::runtime_error{msg};
-            })
+            [](Simulation& sim, uint64_t id) { sim.MarkAgentForRemoval(id); })
+        .def("removed_agents", [](const Simulation& sim) { return sim.RemovedAgents(); })
+        .def("iterate", [](Simulation& sim) { sim.Iterate(); })
         .def(
             "switch_agent_journey",
-            [](const JPS_Simulation_Wrapper& w,
-               JPS_AgentId agentId,
-               JPS_JourneyId journeyId,
-               JPS_StageId stageId) {
-                JPS_ErrorMessage errorMsg{};
-                auto result = JPS_Simulation_SwitchAgentJourney(
-                    w.handle, agentId, journeyId, stageId, &errorMsg);
-                if(result) {
-                    return;
-                }
-                auto msg = std::string(JPS_ErrorMessage_GetMessage(errorMsg));
-                JPS_ErrorMessage_Free(errorMsg);
-                throw std::runtime_error{msg};
-            },
+            [](Simulation& sim,
+               GenericAgent::ID agentId,
+               Journey::ID journeyId,
+               BaseStage::ID stageId) { sim.SwitchAgentJourney(agentId, journeyId, stageId); },
             py::kw_only(),
             py::arg("agent_id"),
             py::arg("journey_id"),
             py::arg("stage_id"))
-        .def(
-            "agent_count",
-            [](JPS_Simulation_Wrapper& simulation) {
-                return JPS_Simulation_AgentCount(simulation.handle);
-            })
-        .def(
-            "elapsed_time",
-            [](JPS_Simulation_Wrapper& simulation) {
-                return JPS_Simulation_ElapsedTime(simulation.handle);
-            })
-        .def(
-            "delta_time",
-            [](JPS_Simulation_Wrapper& simulation) {
-                return JPS_Simulation_DeltaTime(simulation.handle);
-            })
-        .def(
-            "iteration_count",
-            [](JPS_Simulation_Wrapper& simulation) {
-                return JPS_Simulation_IterationCount(simulation.handle);
-            })
+        .def("agent_count", [](const Simulation& sim) { return sim.AgentCount(); })
+        .def("elapsed_time", [](const Simulation& sim) { return sim.ElapsedTime(); })
+        .def("delta_time", [](const Simulation& sim) { return sim.DT(); })
+        .def("iteration_count", [](const Simulation& sim) { return sim.Iteration(); })
         .def(
             "agents",
-            [](const JPS_Simulation_Wrapper& simulation) {
-                return std::make_unique<JPS_AgentIterator_Wrapper>(
-                    JPS_Simulation_AgentIterator(simulation.handle));
-            })
+            [](Simulation& sim) { return py::make_iterator(sim.Agents()); },
+            py::keep_alive<0, 1>())
         .def(
             "agent",
-            [](const JPS_Simulation_Wrapper& simulation, JPS_AgentId agentId) {
-                JPS_ErrorMessage errorMsg{};
-                auto result = JPS_Simulation_GetAgent(simulation.handle, agentId, &errorMsg);
-                if(result) {
-                    return std::make_unique<JPS_Agent_Wrapper>(result);
-                }
-                auto msg = std::string(JPS_ErrorMessage_GetMessage(errorMsg));
-                JPS_ErrorMessage_Free(errorMsg);
-                throw std::runtime_error{msg};
-            },
+            [](const Simulation& sim, GenericAgent::ID agentId) { return sim.Agent(agentId); },
             py::arg("agent_id"))
         .def(
             "agents_in_range",
-            [](JPS_Simulation_Wrapper& w, std::tuple<double, double> pos, double distance) {
-                return std::make_unique<JPS_AgentIdIterator_Wrapper>(
-                    JPS_Simulation_AgentsInRange(w.handle, intoJPS_Point(pos), distance));
+            [](Simulation& sim, Point pos, double distance) {
+                return sim.AgentsInRange(pos, distance);
             })
         .def(
             "agents_in_polygon",
-            [](JPS_Simulation_Wrapper& w, const std::vector<std::tuple<double, double>>& poly) {
-                const auto ppoly = intoJPS_Point(poly);
-                return std::make_unique<JPS_AgentIdIterator_Wrapper>(
-                    JPS_Simulation_AgentsInPolygon(w.handle, ppoly.data(), ppoly.size()));
+            [](Simulation& sim, const std::vector<Point>& poly) {
+                return sim.AgentsInPolygon(poly);
             })
         .def(
+            // TODO(kkratz): CONTINUE HERE!
             "get_stage_proxy",
             [](JPS_Simulation_Wrapper& w, JPS_StageId id)
                 -> std::variant<
