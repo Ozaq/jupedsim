@@ -271,6 +271,9 @@ class Simulation:
         Returns:
             Id of the added agent.
         """
+        if isinstance(parameters, GeneralizedCentrifugalForceModelAgentParameters):
+            model = GeneralizedCentrifugalForceModelState()
+
         return self._obj.add_agent(parameters.as_native())
 
     def mark_agent_for_removal(self, agent_id: int) -> bool:

@@ -108,16 +108,6 @@ class CollisionFreeSpeedModelAgentParameters:
     def v0(self, v0):
         self.desired_speed = v0
 
-    def as_native(self) -> py_jps.CollisionFreeSpeedModelAgentParameters:
-        return py_jps.CollisionFreeSpeedModelAgentParameters(
-            position=self.position,
-            time_gap=self.time_gap,
-            desired_speed=self.desired_speed,
-            radius=self.radius,
-            journey_id=self.journey_id,
-            stage_id=self.stage_id,
-        )
-
 
 class CollisionFreeSpeedModelState:
     def __init__(self, backing):

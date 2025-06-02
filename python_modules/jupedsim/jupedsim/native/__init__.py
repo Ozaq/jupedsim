@@ -8,3 +8,4 @@ except ImportError:
     from ..py_jupedsim import *  # noqa: F403
 
 __all__ = [name for name in dir(py_jps) if not name.startswith("__")]
+print(__all__)

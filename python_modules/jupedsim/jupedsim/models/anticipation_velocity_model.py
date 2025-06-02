@@ -90,23 +90,6 @@ class AnticipationVelocityModelAgentParameters:
     anticipation_time: float = 1.0
     reaction_time: float = 0.3
 
-    def as_native(
-        self,
-    ) -> py_jps.AnticipationVelocityModelAgentParameters:
-        return py_jps.AnticipationVelocityModelAgentParameters(
-            position=self.position,
-            time_gap=self.time_gap,
-            desired_speed=self.desired_speed,
-            radius=self.radius,
-            journey_id=self.journey_id,
-            stage_id=self.stage_id,
-            strength_neighbor_repulsion=self.strength_neighbor_repulsion,
-            range_neighbor_repulsion=self.range_neighbor_repulsion,
-            wall_buffer_distance=self.wall_buffer_distance,
-            anticipation_time=self.anticipation_time,
-            reaction_time=self.reaction_time,
-        )
-
 
 class AnticipationVelocityModelState:
     def __init__(self, backing):

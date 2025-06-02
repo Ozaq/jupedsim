@@ -200,24 +200,6 @@ class SocialForceModelAgentParameters:
     def forceDistance(self, forceDistance):
         self.force_distance = forceDistance
 
-    def as_native(
-        self,
-    ) -> py_jps.SocialForceModelAgentParameters:
-        return py_jps.SocialForceModelAgentParameters(
-            position=self.position,
-            orientation=self.orientation,
-            journey_id=self.journey_id,
-            stage_id=self.stage_id,
-            velocity=self.velocity,
-            mass=self.mass,
-            desired_speed=self.desired_speed,
-            reaction_time=self.reaction_time,
-            agent_scale=self.agent_scale,
-            obstacle_scale=self.obstacle_scale,
-            force_distance=self.force_distance,
-            radius=self.radius,
-        )
-
 
 class SocialForceModelState:
     def __init__(self, backing) -> None:

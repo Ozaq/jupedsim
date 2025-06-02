@@ -118,22 +118,6 @@ class CollisionFreeSpeedModelV2AgentParameters:
     def v0(self, v0):
         self.desired_speed = v0
 
-    def as_native(
-        self,
-    ) -> py_jps.CollisionFreeSpeedModelV2AgentParameters:
-        return py_jps.CollisionFreeSpeedModelV2AgentParameters(
-            position=self.position,
-            time_gap=self.time_gap,
-            desired_speed=self.desired_speed,
-            radius=self.radius,
-            journey_id=self.journey_id,
-            stage_id=self.stage_id,
-            strength_neighbor_repulsion=self.strength_neighbor_repulsion,
-            range_neighbor_repulsion=self.range_neighbor_repulsion,
-            strength_geometry_repulsion=self.strength_geometry_repulsion,
-            range_geometry_repulsion=self.range_geometry_repulsion,
-        )
-
 
 class CollisionFreeSpeedModelV2State:
     def __init__(self, backing):
