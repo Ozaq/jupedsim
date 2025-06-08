@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
+#include <SocialForceModel.hpp>
 #include <SocialForceModelBuilder.hpp>
 #include <SocialForceModelData.hpp>
 
@@ -11,6 +12,7 @@ namespace py = pybind11;
 
 void init_social_force_model(py::module_& m)
 {
+    py::class_<SocialForceModel, OperationalModel>(m, "SocialForceModel");
     py::class_<SocialForceModelBuilder>(m, "SocialForceModelBuilder")
         .def(py::init<double, double>(), py::kw_only(), py::arg("body_force"), py::arg("friction"))
         .def("build", &SocialForceModelBuilder::Build);

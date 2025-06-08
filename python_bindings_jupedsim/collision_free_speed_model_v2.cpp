@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
+#include <CollisionFreeSpeedModelV2.hpp>
 #include <CollisionFreeSpeedModelV2Builder.hpp>
 #include <CollisionFreeSpeedModelV2Data.hpp>
 
@@ -11,6 +12,7 @@ namespace py = pybind11;
 
 void init_collision_free_speed_model_v2(py::module_& m)
 {
+    py::class_<CollisionFreeSpeedModelV2, OperationalModel>(m, "CollisionFreeSpeedModelV2");
     py::class_<CollisionFreeSpeedModelV2Builder>(m, "CollisionFreeSpeedModelV2Builder")
         .def(py::init<>())
         .def("build", &CollisionFreeSpeedModelV2Builder::Build);

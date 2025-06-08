@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
+#include <GeneralizedCentrifugalForceModel.hpp>
 #include <GeneralizedCentrifugalForceModelBuilder.hpp>
 #include <GeneralizedCentrifugalForceModelData.hpp>
 #include <fmt/format.h>
@@ -10,6 +11,9 @@ namespace py = pybind11;
 
 void init_generalized_centrifugal_force_model(py::module_& m)
 {
+    py::class_<OperationalModel>(m, "OperationalModel");
+    py::class_<GeneralizedCentrifugalForceModel, OperationalModel>(
+        m, "GeneralizedCentrifugalForceModel");
     py::class_<GeneralizedCentrifugalForceModelBuilder>(
         m, "GeneralizedCentrifugalForceModelBuilder")
         .def(

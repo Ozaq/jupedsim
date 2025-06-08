@@ -18,7 +18,11 @@ void init_geometry(py::module_& m)
         });
     py::class_<GeometryBuilder>(m, "GeometryBuilder")
         .def(py::init<>())
-        .def("add_accessible_area", &GeometryBuilder::AddAccessibleArea)
+        .def(
+            "add_accessible_area",
+            [](GeometryBuilder& builder, const std::vector<std::tuple<double, double>>& points) {
+                builder.AddAccessibleArea(intoPoints(points));
+            })
         .def("exclude_from_accessible_area", &GeometryBuilder::ExcludeFromAccessibleArea)
         .def("build", &GeometryBuilder::Build);
 }

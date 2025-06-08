@@ -13,7 +13,6 @@ namespace py = pybind11;
 
 void init_simulation(py::module_& m)
 {
-    py::class_<OperationalModel>(m, "OperationalModel");
     py::class_<Simulation>(m, "Simulation")
         .def(
             py::init([](const OperationalModel* model, CollisionGeometry geometry, double dT) {
