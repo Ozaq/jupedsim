@@ -25,7 +25,37 @@ void init_generalized_centrifugal_force_model(py::module_& m)
             py::arg("max_geometry_repulsion_force"))
         .def("build", &GeneralizedCentrifugalForceModelBuilder::Build);
     py::class_<GeneralizedCentrifugalForceModelData>(m, "GeneralizedCentrifugalForceModelState")
-        .def(py::init(), py::kw_only())
+        .def(
+            py::init([](double speed,
+                        Point desiredOrientation,
+                        double mass,
+                        double tau,
+                        double desiredSpeed,
+                        double av,
+                        double amin,
+                        double bmin,
+                        double bmax) {
+                return GeneralizedCentrifugalForceModelData{
+                    .speed = speed,
+                    .e0 = desiredOrientation,
+                    .mass = mass,
+                    .tau = tau,
+                    .v0 = desiredSpeed,
+                    .Av = av,
+                    .AMin = amin,
+                    .BMin = bmin,
+                    .BMax = bmax};
+            }),
+            py::kw_only(),
+            py::arg("speed"),
+            py::arg("desired_orientation"),
+            py::arg("mass"),
+            py::arg("tau"),
+            py::arg("desired_speed"),
+            py::arg("a_v"),
+            py::arg("a_min"),
+            py::arg("b_min"),
+            py::arg("b_max"))
         .def_readwrite("speed", &GeneralizedCentrifugalForceModelData::speed)
         .def_readwrite("desired_orientation", &GeneralizedCentrifugalForceModelData::e0)
         .def_readwrite("orientation_delay", &GeneralizedCentrifugalForceModelData::orientationDelay)

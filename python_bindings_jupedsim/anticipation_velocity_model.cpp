@@ -19,6 +19,33 @@ void init_anticipation_velocity_model(py::module_& m)
             py::arg("rng_seed"))
         .def("build", &AnticipationVelocityModelBuilder::Build);
     py::class_<AnticipationVelocityModelData>(m, "AnticipationVelocityModelState")
+        .def(
+            py::init([](double strengthNeighborRepulsion,
+                        double rangeNeighborRepulsion,
+                        double wallBufferDistance,
+                        double anticipationTime,
+                        double reactionTime,
+                        double timeGap,
+                        double desiredSpeed,
+                        double radius) {
+                return AnticipationVelocityModelData{
+                    .strengthNeighborRepulsion = strengthNeighborRepulsion,
+                    .rangeNeighborRepulsion = rangeNeighborRepulsion,
+                    .wallBufferDistance = wallBufferDistance,
+                    .anticipationTime = anticipationTime,
+                    .timeGap = timeGap,
+                    .v0 = desiredSpeed,
+                    .radius = radius};
+            }),
+            py::kw_only(),
+            py::arg("strength_neighbor_repulsion"),
+            py::arg("range_neighbor_repulsion"),
+            py::arg("wall_buffer_distance"),
+            py::arg("anticipation_time"),
+            py::arg("reaction_time"),
+            py::arg("time_gap"),
+            py::arg("desired_speed"),
+            py::arg("radius"))
         .def_readwrite(
             "strength_neighbor_repulsion",
             &AnticipationVelocityModelData::strengthNeighborRepulsion)

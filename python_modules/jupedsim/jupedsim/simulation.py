@@ -271,10 +271,67 @@ class Simulation:
         Returns:
             Id of the added agent.
         """
-        if isinstance(parameters, GeneralizedCentrifugalForceModelAgentParameters):
-            model = GeneralizedCentrifugalForceModelState()
+        if isinstance(
+            parameters, GeneralizedCentrifugalForceModelAgentParameters
+        ):
+            model = py_jps.GeneralizedCentrifugalForceModelState(
+                speed=parameters.speed,
+                desired_orientation=parameters.orientation,
+                mass=parameters.mass,
+                tau=parameters.tau,
+                desired_speed=parameters.desired_speed,
+                a_v=parameters.a_v,
+                a_min=parameters.a_min,
+                b_min=parameters.b_min,
+                b_max=parameters.b_max,
+            )
+        elif isinstance(parameters, CollisionFreeSpeedModelAgentParameters):
+            model = py_jps.CollisionFreeSpeedModelAgentState(
+                time_gap=parameters.time_gap,
+                desired_speed=parameters.desired_speed,
+                radius=parameters.radius,
+            )
+        elif isinstance(parameters, CollisionFreeSpeedModelV2AgentParameters):
+            model = py_jps.CollisionFreeSpeedModelV2AgentState(
+                strength_neighbor_repulsion=parameters.stregth_neighbor_repulsion,
+                range_neighbor_repulsion=parameters.range_neighbor_repulsion,
+                strength_geometry_repulsion=parameters.stregth_geometry_repulsion,
+                range_geometry_repulsion=parameters.range_geometry_repulsion,
+                time_gap=parameters.time_gap,
+                desired_speed=parameters.desired_speed,
+                radius=parameters.radius,
+            )
+        elif isinstance(parameters, AnticipationVelocityModelAgentParameters):
+            model = py_jps.AnticipationVelocityModelState(
+                strength_neighbor_repulsion=parameters.strength_neighbor_repulsion,
+                range_neighbor_repulsion=parameters.range_neighbor_repulsion,
+                wall_buffer_distance=parameters.wall_buffer_distance,
+                anticipation_time=parameters.anticipation_time,
+                reaction_time=parameters.reaction_time,
+                time_gap=parameters.time_gap,
+                desired_speed=parameters.desired_speed,
+                radius=parameters.radius,
+            )
+        elif isinstance(parameters, SocialForceModelAgentParameters):
+            model = py_jps.SocialForceModelAgentState(
+                velocity=parameters.velocity,
+                mass=parameters.mass,
+                desired_speed=parameters.desired_speed,
+                reaction_time=parameters.reaction_time,
+                agent_scale=parameters.agent_scale,
+                obstacle_scale=parameters.obstacle_scale,
+                force_distance=parameters.force_distance,
+                radius=parameters.radius,
+            )
 
-        return self._obj.add_agent(parameters.as_native())
+        agent = py_jps.Agent(
+            journey_id=parameters.journey_id,
+            stage_id=parameters.stage_id,
+            position=parameters.position,
+            prientation=parameters.orientation,
+            model=model,
+        )
+        return self._obj.add_agent(agent)
 
     def mark_agent_for_removal(self, agent_id: int) -> bool:
         """Marks an agent for removal.

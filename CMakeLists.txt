@@ -183,7 +183,7 @@ if(BUILD_TESTS)
                 --junit-xml=result-systemtests.xml
         DEPENDS py_jupedsim
     )
-    set(unittests_dependency_list libjupedsim-unittests libsimulator-unittests)
+    set(unittests_dependency_list libsimulator-unittests)
     add_custom_target(unittests
         DEPENDS ${unittests_dependency_list}
     )

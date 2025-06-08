@@ -59,7 +59,7 @@ class BuildInfo:
             SHA1 of this version.
 
         """
-        return py_jps.get_build_info().git_commit_hash
+        return py_jps.buildinfo.git_commit_hash
 
     @property
     def git_commit_date(self) -> str:
@@ -69,7 +69,7 @@ class BuildInfo:
             Date the commit of this version as string.
 
         """
-        return py_jps.get_build_info().git_commit_date
+        return py_jps.buildinfo.git_commit_date
 
     @property
     def git_branch(self) -> str:
@@ -79,7 +79,7 @@ class BuildInfo:
             name of the branch this version was build from.
 
         """
-        return py_jps.get_build_info().git_commit_branch
+        return py_jps.buildinfo.git_commit_branch
 
     @property
     def compiler(self) -> str:
@@ -88,7 +88,7 @@ class BuildInfo:
         Returns:
             Compiler identification.
         """
-        return py_jps.get_build_info().compiler
+        return py_jps.buildinfo.compiler
 
     @property
     def compiler_version(self) -> str:
@@ -97,11 +97,11 @@ class BuildInfo:
         Returns:
             Compiler version number.
         """
-        return py_jps.get_build_info().compiler_version
+        return py_jps.buildinfo.compiler_version
 
     @property
     def library_version(self) -> str:
-        return py_jps.get_build_info().library_version
+        return py_jps.buildinfo.library_version
 
     def __repr__(self):
         return dedent(

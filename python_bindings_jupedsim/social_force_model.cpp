@@ -15,6 +15,34 @@ void init_social_force_model(py::module_& m)
         .def(py::init<double, double>(), py::kw_only(), py::arg("body_force"), py::arg("friction"))
         .def("build", &SocialForceModelBuilder::Build);
     py::class_<SocialForceModelData>(m, "SocialForceModelState")
+        .def(
+            py::init([](double velocity,
+                        double mass,
+                        double desiredSpeed,
+                        double reactionTime,
+                        double agentScale,
+                        double obstacleScale,
+                        double forceDistance,
+                        double radius) {
+                return SocialForceModelData{
+                    .velocity = velocity,
+                    .mass = mass,
+                    .desiredSpeed = desiredSpeed,
+                    .reactionTime = reactionTime,
+                    .agentScale = agentScale,
+                    .obstacleScale = obstacleScale,
+                    .forceDistance = forceDistance,
+                    .radius = radius};
+            }),
+            py::kw_only(),
+            py::arg("velocity"),
+            py::arg("mass"),
+            py::arg("desired_speed"),
+            py::arg("reaction_time"),
+            py::arg("agent_scale"),
+            py::arg("obstacle_scale"),
+            py::arg("force_distance"),
+            py::arg("radius"))
         .def_readwrite("velocity", &SocialForceModelData::velocity)
         .def_readwrite("mass", &SocialForceModelData::mass)
         .def_readwrite("desired_speed", &SocialForceModelData::desiredSpeed)

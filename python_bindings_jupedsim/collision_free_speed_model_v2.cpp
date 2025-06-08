@@ -16,6 +16,31 @@ void init_collision_free_speed_model_v2(py::module_& m)
         .def("build", &CollisionFreeSpeedModelV2Builder::Build);
 
     py::class_<CollisionFreeSpeedModelV2Data>(m, "CollisionFreeSpeedModelV2State")
+        .def(
+            py::init([](double strengthNeighborRepulsion,
+                        double rangeNeighborRepulsion,
+                        double strengthGeometryRepulsion,
+                        double rangeGeometryRepulsion,
+                        double timeGap,
+                        double desiredSpeed,
+                        double radius) {
+                return CollisionFreeSpeedModelV2Data{
+                    .strengthNeighborRepulsion = strengthNeighborRepulsion,
+                    .rangeNeighborRepulsion = rangeNeighborRepulsion,
+                    .strengthGeometryRepulsion = strengthGeometryRepulsion,
+                    .rangeGeometryRepulsion = rangeGeometryRepulsion,
+                    .timeGap = timeGap,
+                    .v0 = desiredSpeed,
+                    .radius = radius};
+            }),
+            py::kw_only(),
+            py::arg("strength_neighbor_repulsion"),
+            py::arg("range_neighbor_repulsion"),
+            py::arg("strength_geometry_repulsion"),
+            py::arg("range_geometry_repulsion"),
+            py::arg("time_gap"),
+            py::arg("desired_speed"),
+            py::arg("radius"))
         .def_readwrite(
             "strength_neighbor_repulsion",
             &CollisionFreeSpeedModelV2Data::strengthNeighborRepulsion)

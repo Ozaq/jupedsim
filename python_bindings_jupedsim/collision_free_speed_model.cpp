@@ -11,6 +11,7 @@ namespace py = pybind11;
 
 void init_collision_free_speed_model(py::module_& m)
 {
+    py::class_<CollisionFreeSpeedModel>(m, "CollisionFreeSpeedModel");
     py::class_<CollisionFreeSpeedModelBuilder>(m, "CollisionFreeSpeedModelBuilder")
         .def(
             py::init<double, double, double, double>(),
@@ -21,7 +22,16 @@ void init_collision_free_speed_model(py::module_& m)
             py::arg("range_geometry_repulsion"))
         .def("build", &CollisionFreeSpeedModelBuilder::Build);
     py::class_<CollisionFreeSpeedModelData>(m, "CollisionFreeSpeedModelState")
+        .def(
+            py::init([](double timeGap, double desiredSpeed, double radius) {
+                return CollisionFreeSpeedModelData{
+                    .timeGap = timeGap, .v0 = desiredSpeed, .radius = radius};
+            }),
+            py::kw_only(),
+            py::arg("time_gap"),
+            py::arg("desired_speed"),
+            py::arg("radius"))
         .def_readwrite("time_gap", &CollisionFreeSpeedModelData::timeGap)
         .def_readwrite("desired_speed", &CollisionFreeSpeedModelData::v0)
-        .def_readwrite("readius", &CollisionFreeSpeedModelData::radius);
+        .def_readwrite("radius", &CollisionFreeSpeedModelData::radius);
 }
