@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
+#include "conversion.hpp"
 #include <Journey.hpp>
 #include <Stage.hpp>
 
@@ -14,11 +15,11 @@ using JourneyDesc = std::map<BaseStage::ID, TransitionDescription>;
 void init_journey(py::module_& m)
 {
     py::class_<JourneyDesc>(m, "JourneyDescription")
-        .def(py::init([]() { return std::make_unique<JourneyDesc>(); }))
+        .def(py::init([]() { return JourneyDesc{}; }))
         .def(py::init([](const std::vector<BaseStage::ID>& ids) {
-            auto desc = std::make_unique<JourneyDesc>();
+            auto desc = JourneyDesc{};
             for(auto id : ids) {
-                (*desc)[id] = NonTransitionDescription{};
+                desc[id] = NonTransitionDescription{};
             }
             return desc;
         }))

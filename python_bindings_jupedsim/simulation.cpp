@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
+#include "conversion.hpp"
 #include <Unreachable.hpp>
 
 #include <CollisionGeometry.hpp>
@@ -25,23 +26,23 @@ void init_simulation(py::module_& m)
             py::arg("dt"))
         .def(
             "add_waypoint_stage",
-            [](Simulation& sim, Point position, double distance) {
-                return sim.AddStage(WaypointDescription{position, distance}).getID();
+            [](Simulation& sim, std::tuple<double, double> position, double distance) {
+                return sim.AddStage(WaypointDescription{intoPoint(position), distance}).getID();
             })
         .def(
             "add_queue_stage",
-            [](Simulation& sim, const std::vector<Point>& positions) {
-                return sim.AddStage(NotifiableQueueDescription{positions}).getID();
+            [](Simulation& sim, const std::vector<std::tuple<double, double>>& positions) {
+                return sim.AddStage(NotifiableQueueDescription{intoPoints(positions)}).getID();
             })
         .def(
             "add_waiting_set_stage",
-            [](Simulation& sim, const std::vector<Point>& positions) {
-                return sim.AddStage(NotifiableWaitingSetDescription{positions}).getID();
+            [](Simulation& sim, const std::vector<std::tuple<double, double>>& positions) {
+                return sim.AddStage(NotifiableWaitingSetDescription{intoPoints(positions)}).getID();
             })
         .def(
             "add_exit_stage",
-            [](Simulation& sim, const std::vector<Point>& polygon) {
-                return sim.AddStage(ExitDescription{Polygon{polygon}}).getID();
+            [](Simulation& sim, const std::vector<std::tuple<double, double>>& polygon) {
+                return sim.AddStage(ExitDescription{Polygon{intoPoints(polygon)}}).getID();
             })
         .def(
             "add_direct_steering_stage",
@@ -83,13 +84,13 @@ void init_simulation(py::module_& m)
             py::arg("agent_id"))
         .def(
             "agents_in_range",
-            [](Simulation& sim, Point pos, double distance) {
-                return sim.AgentsInRange(pos, distance);
+            [](Simulation& sim, std::tuple<double, double> pos, double distance) {
+                return sim.AgentsInRange(intoPoint(pos), distance);
             })
         .def(
             "agents_in_polygon",
-            [](Simulation& sim, const std::vector<Point>& poly) {
-                return sim.AgentsInPolygon(poly);
+            [](Simulation& sim, const std::vector<std::tuple<double, double>>& poly) {
+                return sim.AgentsInPolygon(intoPoints(poly));
             })
         .def("get_stage_proxy", [](Simulation& sim, BaseStage::ID id) { return sim.Stage(id); })
         .def("set_tracing", [](Simulation& sim, bool status) { sim.SetTracing(status); })

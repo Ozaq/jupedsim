@@ -17,11 +17,16 @@ void init_agent(py::module_& m)
         .def(
             py::init([](Journey::ID journeyId,
                         BaseStage::ID stageId,
-                        Point position,
-                        Point orientation,
+                        std::tuple<double, double> position,
+                        std::tuple<double, double> orientation,
                         GenericAgent::Model model) {
                 return GenericAgent(
-                    GenericAgent::ID::Invalid, journeyId, stageId, position, orientation, model);
+                    GenericAgent::ID::Invalid,
+                    journeyId,
+                    stageId,
+                    intoPoint(position),
+                    intoPoint(orientation),
+                    model);
             }))
         .def_property_readonly("id", [](const GenericAgent& agent) { return agent.id.getID(); })
         .def_property_readonly(

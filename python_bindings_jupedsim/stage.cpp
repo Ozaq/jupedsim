@@ -7,6 +7,7 @@ namespace py = pybind11;
 
 void init_stage(py::module_& m)
 {
+    py::class_<BaseStage::ID>(m, "StageID");
     py::class_<NotifiableQueueProxy>(m, "NotifiableQueueProxy")
         .def("count_targeting", &NotifiableQueueProxy::CountTargeting)
         .def("count_enqueued", &NotifiableQueueProxy::CountEnqueued)
