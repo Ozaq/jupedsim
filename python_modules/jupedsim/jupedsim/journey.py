@@ -81,6 +81,14 @@ class Transition:
         return Transition(
             py_jps.Transition.create_least_targeted_transition(stage_ids)
         )
+    
+    @staticmethod
+    def create_none_transition() -> "Transition":
+        """
+        """
+        return Transition(
+            py_jps.Transition.create_none_transition()
+        )
 
 
 class JourneyDescription:
@@ -99,10 +107,10 @@ class JourneyDescription:
             stage_ids: list of stages this journey should contain.
 
         """
-        if stage_ids is None:
-            self._obj = py_jps.JourneyDescription()
-        else:
-            self._obj = py_jps.JourneyDescription(stage_ids)
+        self._transitions = {}
+        if stage_ids:
+            for id in stage_ids:
+                self._transitions[id] = Transition.create_none_transition()
 
     def add(self, stages: int | list[int]) -> None:
         """Add additional stage or stages.
@@ -111,7 +119,11 @@ class JourneyDescription:
             stages: A single stage id or a list of stage ids.
 
         """
-        self._obj.add(stages)
+        if isinstance(stages, int):
+            self._transitions[stages] = Transition.create_none_transition()
+        elif isinstance(stages, list[int]):
+            for id in stages:
+                self._transitions[id] = Transition.create_none_transition()
 
     def set_transition_for_stage(
         self, stage_id: int, transition: Transition
@@ -125,4 +137,4 @@ class JourneyDescription:
             transition: transition to set
 
         """
-        self._obj.set_transition_for_stage(stage_id, transition._obj)
+        self._transitions[stage_id] = transition._obj
