@@ -107,7 +107,7 @@ class JourneyDescription:
             stage_ids: list of stages this journey should contain.
 
         """
-        self._transitions = {}
+        self._transitions = dict()
         if stage_ids:
             for id in stage_ids:
                 self._transitions[id] = Transition.create_none_transition()

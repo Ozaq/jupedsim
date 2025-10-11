@@ -249,7 +249,8 @@ class Simulation:
             Id of the added Journey.
 
         """
-        return self._obj.add_journey(journey._obj)
+        print(journey._transitions)
+        return self._obj.add_journey({k:v._obj for k,v in journey._transitions.items()})
 
     def add_agent(
         self,
