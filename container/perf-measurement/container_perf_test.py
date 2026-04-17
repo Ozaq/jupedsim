@@ -76,6 +76,7 @@ def run_test(test, args, build_dir, result_dir):
     test_env["PYTHONPATH"] = (
         "/src/python_modules/jupedsim:/src/python_modules/jupedsim_visualizer:/build/lib"
     )
+    test_env["PYTHONPERFSUPPORT"] = "1"
 
     perf_data_file_name = f"{test}.perf.data"
     perf_file_name = f"{test}.perf"
@@ -91,10 +92,9 @@ def run_test(test, args, build_dir, result_dir):
         [
             "perf",
             "record",
-            "--call-graph",
-            "fp",
-            "-e",
-            "cycles:u",
+            "-F",
+            "999",
+            "-g",
             "-o",
             perf_data_file_name,
             "python3",
@@ -461,7 +461,7 @@ def run_tests(test_selection: str, args):
     if test_selection in ["all", "grosser_stern"]:
         logging.info("run grosser_stern performance test")
         if not args or test_selection == "all":
-            args = ["--limit", "100"]
+            args = ["--limit", "20"]
         run_test("grosser_stern", args, build_dir, result_dir)
         results["Grosser Stern"] = "grosser_stern.svg"
         plots["Grosser Stern"] = {

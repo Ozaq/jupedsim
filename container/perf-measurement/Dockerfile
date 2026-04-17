@@ -1,4 +1,4 @@
-FROM ubuntu:23.04
+FROM ubuntu:26.04
 
 # Install dependencies
 RUN apt-get update && \
@@ -16,6 +16,7 @@ RUN apt-get update && \
     libglm-dev \
     libopengl-dev \
     python3 \
+    python3-dbg \
     python3-pip \
     linux-tools-common \
     linux-tools-generic \
@@ -25,6 +26,8 @@ RUN apt-get update && \
     libunwind-dev \
     libslang2-dev \
     libdw-dev \
+    pkg-config \
+    libtraceevent-dev \
     linux-source
 
 # Install perf from source
@@ -43,5 +46,6 @@ RUN git config --global --add safe.directory '*'
 # Copy perf run test
 COPY container/perf-measurement/container_perf_test.py /opt/
 
+ENV PYTHONPERFSUPPORT=1
 ENTRYPOINT ["python3", "-u", "/opt/container_perf_test.py"]
 CMD []
