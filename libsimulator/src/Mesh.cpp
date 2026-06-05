@@ -223,7 +223,7 @@ void Mesh::smartMerge(bool keep_deadends = true)
         for(size_t i = 0; i < polygon.Neighbors.size(); ++i) {
             const auto& neighbor = polygon.Neighbors[i];
             if(neighbor == Polygon::InvalidIndex || neighbor == index ||
-               polygons[neighbor].Neighbors.size() == 0) {
+               polygons[neighbor].Neighbors.empty()) {
                 continue;
             }
             const auto& valid_neighbor = i;
@@ -265,7 +265,7 @@ void Mesh::smartMerge(bool keep_deadends = true)
         for(size_t i = 0; i < polygon.Neighbors.size(); ++i) {
             const auto& neighbor = polygon.Neighbors[i];
             if(neighbor == Polygon::InvalidIndex || neighbor == node.Source ||
-               polygons[neighbor].Vertices.size() == 0) {
+               polygons[neighbor].Vertices.empty()) {
                 continue;
             }
             size_t mergeIndex = polygon.Neighbors[i];

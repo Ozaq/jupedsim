@@ -92,7 +92,7 @@ bool Waypoint::IsCompleted(const GenericAgent& agent)
     return actual_distance <= distance;
 }
 
-Point Waypoint::Target(const GenericAgent&)
+Point Waypoint::Target(const GenericAgent& /*agent*/)
 {
     return position;
 }
@@ -122,7 +122,7 @@ bool Exit::IsCompleted(const GenericAgent& agent)
     return hasReachedExit;
 }
 
-Point Exit::Target(const GenericAgent&)
+Point Exit::Target(const GenericAgent& /*agent*/)
 {
     return area.Centroid();
 }

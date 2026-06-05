@@ -42,7 +42,8 @@ struct AABB {
 
     bool Overlap(const AABB& other) const
     {
-        return !(XMax < other.XMin || XMin > other.XMax || YMax < other.YMin || YMin > other.YMax);
+        return XMax >= other.XMin && XMin <= other.XMax && YMax >= other.YMin &&
+               YMin <= other.YMax;
     };
 
     bool Intersects(const LineSegment& lineSegment) const;

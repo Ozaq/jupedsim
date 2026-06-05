@@ -11,7 +11,7 @@ class StageSystem
 {
 
 public:
-    StageSystem() {}
+    StageSystem() = default;
     ~StageSystem() = default;
     StageSystem(const StageSystem& other) = delete;
     StageSystem& operator=(const StageSystem& other) = delete;

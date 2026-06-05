@@ -323,7 +323,7 @@ class DirectSteering : public BaseStage
 public:
     DirectSteering() = default;
     ~DirectSteering() override = default;
-    bool IsCompleted(const GenericAgent&) override { return false; };
+    bool IsCompleted(const GenericAgent& /*agent*/) override { return false; };
     Point Target(const GenericAgent& agent) override { return agent.Target; };
     StageProxy Proxy(Simulation* simulation) override
     {

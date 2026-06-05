@@ -87,9 +87,9 @@ double Distance(const Point& a, const Point& b);
 double DistanceSquared(const Point& a, const Point& b);
 
 /// multiplication
-const Point operator*(const Point& p, const double f);
+const Point operator*(const Point& p, double f);
 /// division
-const Point operator/(const Point& p, const double f);
+const Point operator/(const Point& p, double f);
 
 template <>
 struct fmt::formatter<Point> {

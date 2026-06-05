@@ -39,7 +39,7 @@ public:
     const Mesh* MeshData() const { return mesh.get(); };
 
 private:
-    CDT::Face_handle findFace(K::Point_2) const;
+    CDT::Face_handle findFace(K::Point_2 p) const;
     std::vector<Point>
     straightenPath(Point from, Point to, const std::vector<CDT::Face_handle>& path);
 };

@@ -19,7 +19,7 @@ private:
     std::unordered_map<BaseStage::ID, std::unique_ptr<BaseStage>> stages;
 
 public:
-    StageManager() {}
+    StageManager() = default;
     ~StageManager() = default;
     StageManager(const StageManager& other) = delete;
     StageManager& operator=(const StageManager& other) = delete;

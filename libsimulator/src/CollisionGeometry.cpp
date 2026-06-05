@@ -28,10 +28,7 @@ bool IsN8Adjacent(const Cell& a, const Cell& b)
 {
     const auto dx = static_cast<int>(abs(a.X - b.X) / CELL_EXTEND);
     const auto dy = static_cast<int>(abs(a.Y - b.Y) / CELL_EXTEND);
-    if((dx == 0 && dy == 0) || dx > 1 || dy > 1) {
-        return false;
-    }
-    return true;
+    return !((dx == 0 && dy == 0) || dx > 1 || dy > 1);
 }
 
 std::set<Cell> cellsFromLineSegment(LineSegment ls)

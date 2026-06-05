@@ -54,7 +54,7 @@ public:
     std::stringstream IntoLibPolyanyaMeshDescription() const;
     const Mesh::Polygon& Polygons(size_t index) const { return polygons.at(index); }
     const AABB& AxisAlignedBoundingBox(size_t index) const { return boundingBoxes.at(index); }
-    bool TriangleContains(const size_t, glm::dvec2 p) const;
+    bool TriangleContains(size_t polygonIndex, glm::dvec2 p) const;
 
 private:
     void mergeDeadEnds();

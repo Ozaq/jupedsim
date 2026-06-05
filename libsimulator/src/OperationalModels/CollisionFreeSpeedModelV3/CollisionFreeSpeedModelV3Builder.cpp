@@ -3,9 +3,7 @@
 
 #include "CollisionFreeSpeedModelV3.hpp"
 
-CollisionFreeSpeedModelV3Builder::CollisionFreeSpeedModelV3Builder()
-{
-}
+CollisionFreeSpeedModelV3Builder::CollisionFreeSpeedModelV3Builder() = default;
 
 CollisionFreeSpeedModelV3 CollisionFreeSpeedModelV3Builder::Build()
 {
