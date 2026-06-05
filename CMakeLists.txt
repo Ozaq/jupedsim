@@ -54,6 +54,12 @@ if(WITH_FORMAT AND ${CMAKE_SYSTEM} MATCHES "Windows")
     message(FATAL_ERROR "Format target not supported on Windows")
 endif()
 
+set(WITH_TIDY OFF CACHE BOOL "Create clang-tidy tools")
+print_var(WITH_TIDY)
+if(WITH_TIDY AND ${CMAKE_SYSTEM} MATCHES "Windows")
+    message(FATAL_ERROR "clang-tidy target not supported on Windows")
+endif()
+
 ################################################################################
 # Compilation flags
 ################################################################################
@@ -214,8 +220,10 @@ add_subdirectory(libsimulator)
 add_subdirectory(python_bindings_jupedsim)
 
 ################################################################################
-# Code formatting
+# Code formatting / static analysis
 ################################################################################
+set(checked_folders libcommon libsimulator python_bindings_jupedsim)
+
 if(UNIX AND WITH_FORMAT)
     set(clang-format-version 21)
     if(DEFINED ENV{CLANG_FORMAT})
@@ -248,10 +256,9 @@ if(UNIX AND WITH_FORMAT)
             )
             if(version MATCHES "^${clang-format-version}.*")
                 message(STATUS "Found clang-format ${version}, add format-check and reformat targets")
-                set(folders libcommon libsimulator)
                 add_custom_target(check-format
                     COMMENT "Checking format with clang-format"
-                    COMMAND find ${folders}
+                    COMMAND find ${checked_folders}
                         -name '*.cpp'
                         -o -name '*.c'
                         -o -name '*.h'
@@ -261,7 +268,7 @@ if(UNIX AND WITH_FORMAT)
                 )
                 add_custom_target(reformat
                     COMMENT "Reformatting code with clang-format"
-                    COMMAND find ${folders}
+                    COMMAND find ${checked_folders}
                         -name '*.cpp'
                         -o -name '*.c'
                         -o -name '*.h'
@@ -276,6 +283,64 @@ if(UNIX AND WITH_FORMAT)
             message(FATAL_ERROR "Could not create formatting target, clang-format ${version_string} does not yield a version number")
         endif()
     endif()
+endif()
+
+if(UNIX AND WITH_TIDY)
+    set(clang-tidy-version 21)
+    if(DEFINED ENV{CLANG_TIDY})
+        set(CLANG_TIDY "$ENV{CLANG_TIDY}")
+        if(NOT EXISTS "${CLANG_TIDY}")
+            message(FATAL_ERROR "CLANG_TIDY environment variable points to non-existent path: ${CLANG_TIDY}")
+        endif()
+        message(STATUS "Using clang-tidy from CLANG_TIDY env: ${CLANG_TIDY}")
+    else()
+        find_program(CLANG_TIDY
+            NAMES
+                clang-tidy-${clang-tidy-version}
+                clang-tidy
+            REQUIRED
+        )
+    endif()
+    execute_process(
+        COMMAND ${CLANG_TIDY} --version
+        OUTPUT_VARIABLE clang_tidy_version_string
+        ERROR_QUIET
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+    message(STATUS "Using clang-tidy: ${clang_tidy_version_string}")
+
+    if(DEFINED ENV{RUN_CLANG_TIDY})
+        set(RUN_CLANG_TIDY "$ENV{RUN_CLANG_TIDY}")
+        if(NOT EXISTS "${RUN_CLANG_TIDY}")
+            message(FATAL_ERROR "RUN_CLANG_TIDY environment variable points to non-existent path: ${RUN_CLANG_TIDY}")
+        endif()
+        message(STATUS "Using run-clang-tidy from RUN_CLANG_TIDY env: ${RUN_CLANG_TIDY}")
+    else()
+        find_program(RUN_CLANG_TIDY
+            NAMES
+                run-clang-tidy-${clang-tidy-version}
+                run-clang-tidy-${clang-tidy-version}.py
+                run-clang-tidy.py
+                run-clang-tidy
+            REQUIRED
+        )
+    endif()
+    message(STATUS "Using run-clang-tidy: ${RUN_CLANG_TIDY}")
+
+    string(JOIN "|" checked_folders_regex ${checked_folders})
+
+    add_custom_target(check-tidy
+        COMMENT "Checking code with clang-tidy"
+        COMMAND ${RUN_CLANG_TIDY}
+            -p=${CMAKE_BINARY_DIR}
+            -config-file=${CMAKE_SOURCE_DIR}/.clang-tidy
+            -clang-tidy-binary=${CLANG_TIDY}
+            "-warnings-as-errors=*"
+            "-source-filter=^${CMAKE_SOURCE_DIR}/(${checked_folders_regex})/.*"
+            "-header-filter=^${CMAKE_SOURCE_DIR}/(${checked_folders_regex})/.*"
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        VERBATIM
+    )
 endif()
 
 ################################################################################
