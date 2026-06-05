@@ -19,10 +19,10 @@
 
 class OperationalDecisionSystem
 {
-    std::unique_ptr<OperationalModel> _model{};
+    std::unique_ptr<OperationalModel> model{};
 
 public:
-    OperationalDecisionSystem(std::unique_ptr<OperationalModel>&& model) : _model(std::move(model))
+    OperationalDecisionSystem(std::unique_ptr<OperationalModel>&& model) : model(std::move(model))
     {
     }
     ~OperationalDecisionSystem() = default;
@@ -31,7 +31,7 @@ public:
     OperationalDecisionSystem(OperationalDecisionSystem&& other) = delete;
     OperationalDecisionSystem& operator=(OperationalDecisionSystem&& other) = delete;
 
-    OperationalModelType ModelType() const { return _model->Type(); }
+    OperationalModelType ModelType() const { return model->Type(); }
 
     void
     Run(double dT,
@@ -48,7 +48,7 @@ public:
             std::end(agents),
             std::back_inserter(updates),
             [this, &dT, &geometry, &neighborhoodSearch](const auto& agent) {
-                return _model->ComputeNewPosition(dT, agent, geometry, neighborhoodSearch);
+                return model->ComputeNewPosition(dT, agent, geometry, neighborhoodSearch);
             });
 
         std::for_each(
@@ -57,7 +57,7 @@ public:
             [this](auto tup) {
                 auto& [agent, update] = tup;
                 if(update) {
-                    _model->ApplyUpdate(*update, agent);
+                    model->ApplyUpdate(*update, agent);
                 }
             });
     }
@@ -67,6 +67,6 @@ public:
         const NeighborhoodSearch<GenericAgent>& neighborhoodSearch,
         const CollisionGeometry& geometry) const
     {
-        _model->CheckModelConstraint(agent, neighborhoodSearch, geometry);
+        model->CheckModelConstraint(agent, neighborhoodSearch, geometry);
     }
 };

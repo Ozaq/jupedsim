@@ -16,10 +16,10 @@
 template <typename PointType>
 inline auto triarea2d(PointType apex, PointType a, PointType b)
 {
-    const float ax = a.x - apex.x;
-    const float ay = a.y - apex.y;
-    const float bx = b.x - apex.x;
-    const float by = b.y - apex.y;
+    const float ax = a.X - apex.X;
+    const float ay = a.Y - apex.Y;
+    const float bx = b.X - apex.X;
+    const float by = b.Y - apex.Y;
     return bx * ay - ax * by;
 }
 
@@ -28,8 +28,8 @@ enum class Orientation { Colinear, Clockwise, CounterClockwise };
 template <typename PointType>
 inline auto orientation(PointType a, PointType b, PointType c)
 {
-    const auto slope_ab = (b.y - a.y) / (b.x - a.x);
-    const auto slope_bc = (c.y - b.y) / (c.x - b.x);
+    const auto slope_ab = (b.Y - a.Y) / (b.X - a.X);
+    const auto slope_bc = (c.Y - b.Y) / (c.X - b.X);
     const auto slope_delta = slope_ab - slope_bc;
 
     if(slope_delta > 0) {
@@ -74,8 +74,8 @@ inline bool intersectsWithCGAL(const LineSegment l1, const LineSegment l2)
     using K = CGAL::Exact_predicates_inexact_constructions_kernel;
     using Point_2 = K::Point_2;
     using Segment_2 = K::Segment_2;
-    const Segment_2 this_segment(Point_2(l1.p1.x, l1.p1.y), Point_2(l1.p2.x, l1.p2.y));
-    const Segment_2 other_segment(Point_2(l2.p1.x, l2.p1.y), Point_2(l2.p2.x, l2.p2.y));
+    const Segment_2 this_segment(Point_2(l1.P1.X, l1.P1.Y), Point_2(l1.P2.X, l1.P2.Y));
+    const Segment_2 other_segment(Point_2(l2.P1.X, l2.P1.Y), Point_2(l2.P2.X, l2.P2.Y));
     return CGAL::do_intersect(this_segment, other_segment);
 }
 

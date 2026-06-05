@@ -13,5 +13,5 @@ public:
 
 private:
     double pushoutStrength{};
-    uint64_t rng_seed{};
+    uint64_t rngSeed{};
 };

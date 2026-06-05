@@ -29,7 +29,7 @@ perfetto::TraceConfig buildDefaultTraceConfig()
 
 void Profiler::createSession()
 {
-    if(tracing_session) {
+    if(tracingSession) {
         return;
     }
 
@@ -41,22 +41,22 @@ void Profiler::createSession()
 
     perfetto::TrackEvent::Register();
 
-    tracing_session = perfetto::Tracing::NewTrace();
-    tracing_session->Setup(buildDefaultTraceConfig());
-    tracing_session->StartBlocking();
+    tracingSession = perfetto::Tracing::NewTrace();
+    tracingSession->Setup(buildDefaultTraceConfig());
+    tracingSession->StartBlocking();
 }
 
 void Profiler::writeAndResetSession(const std::string& filename)
 {
-    if(!tracing_session) {
+    if(!tracingSession) {
         return;
     }
 
     perfetto::TrackEvent::Flush();
-    tracing_session->StopBlocking();
-    const auto trace_data = tracing_session->ReadTraceBlocking();
+    tracingSession->StopBlocking();
+    const auto trace_data = tracingSession->ReadTraceBlocking();
     if(filename.empty()) {
-        tracing_session.reset();
+        tracingSession.reset();
         return;
     }
     std::ofstream output(filename, std::ios::binary | std::ios::trunc);
@@ -67,12 +67,12 @@ void Profiler::writeAndResetSession(const std::string& filename)
         LOG_ERROR("Failed to open Perfetto output file: {}", filename);
     }
 
-    tracing_session.reset();
+    tracingSession.reset();
 }
 
-void Profiler::enable()
+void Profiler::Enable()
 {
-    auto& instance = Profiler::instance();
+    auto& instance = Profiler::Instance();
     if(instance.enabled) {
         return;
     }
@@ -81,10 +81,10 @@ void Profiler::enable()
     instance.enabled = true;
 }
 
-void Profiler::disable()
+void Profiler::Disable()
 {
-    auto& instance = Profiler::instance();
-    if(!instance.enabled && !instance.tracing_session) {
+    auto& instance = Profiler::Instance();
+    if(!instance.enabled && !instance.tracingSession) {
         return;
     }
 
@@ -92,9 +92,9 @@ void Profiler::disable()
     instance.enabled = false;
 }
 
-void Profiler::dumpAndReset(const std::string& filename)
+void Profiler::DumpAndReset(const std::string& filename)
 {
-    auto& instance = Profiler::instance();
+    auto& instance = Profiler::Instance();
     instance.writeAndResetSession(filename);
     instance.enabled = false;
 }

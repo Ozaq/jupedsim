@@ -4,7 +4,7 @@
 #include <optional>
 
 struct GeneralizedCentrifugalForceModelUpdate {
-    std::optional<Point> position{};
-    std::optional<Point> velocity{};
-    Point e0{}; // desired direction
+    std::optional<Point> Position{};
+    std::optional<Point> Velocity{};
+    Point E0{}; // desired direction
 };

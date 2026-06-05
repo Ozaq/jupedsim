@@ -14,69 +14,69 @@ Logger& Logger::Instance()
 
 void Logger::SetDebugCallback(LogCallback&& cb)
 {
-    debug_msg_cb = cb;
+    debugMsgCb = cb;
 }
 
 void Logger::ClearDebugCallback()
 {
-    debug_msg_cb = {};
+    debugMsgCb = {};
 }
 
 void Logger::LogDebugMessage(const std::string& msg)
 {
-    if(debug_msg_cb) {
-        debug_msg_cb(msg);
+    if(debugMsgCb) {
+        debugMsgCb(msg);
     }
 }
 
 void Logger::SetInfoCallback(LogCallback&& cb)
 {
-    info_msg_cb = cb;
+    infoMsgCb = cb;
 }
 
 void Logger::ClearInfoCallback()
 {
-    info_msg_cb = {};
+    infoMsgCb = {};
 }
 
 void Logger::LogInfoMessage(const std::string& msg)
 {
-    if(info_msg_cb) {
-        info_msg_cb(msg);
+    if(infoMsgCb) {
+        infoMsgCb(msg);
     }
 }
 
 void Logger::SetWarningCallback(LogCallback&& cb)
 {
-    warning_msg_cb = cb;
+    warningMsgCb = cb;
 }
 
 void Logger::ClearWarningCallback()
 {
-    warning_msg_cb = {};
+    warningMsgCb = {};
 }
 
 void Logger::LogWarningMessage(const std::string& msg)
 {
-    if(warning_msg_cb) {
-        warning_msg_cb(msg);
+    if(warningMsgCb) {
+        warningMsgCb(msg);
     }
 }
 
 void Logger::SetErrorCallback(LogCallback&& cb)
 {
-    error_msg_cb = cb;
+    errorMsgCb = cb;
 }
 
 void Logger::ClearErrorCallback()
 {
-    error_msg_cb = {};
+    errorMsgCb = {};
 }
 
 void Logger::LogErrorMessage(const std::string& msg)
 {
-    if(error_msg_cb) {
-        error_msg_cb(msg);
+    if(errorMsgCb) {
+        errorMsgCb(msg);
     }
 }
 

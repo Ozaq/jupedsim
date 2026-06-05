@@ -8,10 +8,10 @@ TEST(AABB, CanConstructFromVector)
 {
     const std::vector<Point> c{{0, 0}, {1, 1}, {-1, -1}};
     const AABB aabb(c);
-    ASSERT_EQ(aabb.xmin, -1);
-    ASSERT_EQ(aabb.xmax, 1);
-    ASSERT_EQ(aabb.ymin, -1);
-    ASSERT_EQ(aabb.ymax, 1);
+    ASSERT_EQ(aabb.XMin, -1);
+    ASSERT_EQ(aabb.XMax, 1);
+    ASSERT_EQ(aabb.YMin, -1);
+    ASSERT_EQ(aabb.YMax, 1);
 }
 
 TEST(AABB, CannotConstructFromEmptyVector)
@@ -23,28 +23,28 @@ TEST(AABB, CannotConstructFromEmptyVector)
 TEST(AABB, CanConstructFromPositivePoints)
 {
     const AABB aabb({0, 0}, {1, 1});
-    ASSERT_EQ(aabb.xmin, 0);
-    ASSERT_EQ(aabb.xmax, 1);
-    ASSERT_EQ(aabb.ymin, 0);
-    ASSERT_EQ(aabb.ymax, 1);
+    ASSERT_EQ(aabb.XMin, 0);
+    ASSERT_EQ(aabb.XMax, 1);
+    ASSERT_EQ(aabb.YMin, 0);
+    ASSERT_EQ(aabb.YMax, 1);
 }
 
 TEST(AABB, CanConstructFromNegativePoints)
 {
     const AABB aabb({-10, -1}, {-4, -5});
-    ASSERT_EQ(aabb.xmin, -10);
-    ASSERT_EQ(aabb.xmax, -4);
-    ASSERT_EQ(aabb.ymin, -5);
-    ASSERT_EQ(aabb.ymax, -1);
+    ASSERT_EQ(aabb.XMin, -10);
+    ASSERT_EQ(aabb.XMax, -4);
+    ASSERT_EQ(aabb.YMin, -5);
+    ASSERT_EQ(aabb.YMax, -1);
 }
 
 TEST(AABB, CanConstructFromPoints)
 {
     const AABB aabb({-2, 1}, {3, -5});
-    ASSERT_EQ(aabb.xmin, -2);
-    ASSERT_EQ(aabb.xmax, 3);
-    ASSERT_EQ(aabb.ymin, -5);
-    ASSERT_EQ(aabb.ymax, 1);
+    ASSERT_EQ(aabb.XMin, -2);
+    ASSERT_EQ(aabb.XMax, 3);
+    ASSERT_EQ(aabb.YMin, -5);
+    ASSERT_EQ(aabb.YMax, 1);
 }
 
 TEST(AABB, InsidePointIsInside)

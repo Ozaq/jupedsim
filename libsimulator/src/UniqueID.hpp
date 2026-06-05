@@ -33,7 +33,7 @@ private:
     // needed for now NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
     inline static std::atomic<Integer> uid_counter{0};
     /// The actual unique identifier of the object
-    Integer m_value{++uid_counter};
+    Integer mValue{++uid_counter};
 
 public:
     /// Represents an invalid id
@@ -41,7 +41,7 @@ public:
 
     UniqueID() = default;
 
-    UniqueID(Integer id) : m_value(id) {}
+    UniqueID(Integer id) : mValue(id) {}
 
     /// UniqueIds are copyable.
     UniqueID(UniqueID const& p_other) = default;
@@ -57,13 +57,13 @@ public:
 
     ~UniqueID() noexcept = default;
 
-    Integer getID() const noexcept { return m_value; }
+    Integer GetID() const noexcept { return mValue; }
 
-    bool operator==(const UniqueID& p_other) const noexcept { return m_value == p_other.m_value; };
+    bool operator==(const UniqueID& p_other) const noexcept { return mValue == p_other.mValue; };
 
-    bool operator!=(const UniqueID& p_other) const noexcept { return m_value != p_other.m_value; };
+    bool operator!=(const UniqueID& p_other) const noexcept { return mValue != p_other.mValue; };
 
-    bool operator<(const UniqueID& p_other) const noexcept { return m_value < p_other.m_value; };
+    bool operator<(const UniqueID& p_other) const noexcept { return mValue < p_other.mValue; };
 
     bool operator>(const UniqueID& p_other) const noexcept { return p_other < *this; };
 
@@ -85,7 +85,7 @@ template <typename Tag, typename Integer>
 struct hash<jps::UniqueID<Tag, Integer>> {
     size_t operator()(const jps::UniqueID<Tag, Integer>& x) const
     {
-        return std::hash<Integer>{}(x.getID());
+        return std::hash<Integer>{}(x.GetID());
     }
 };
 } // namespace std
@@ -103,7 +103,7 @@ struct formatter<::jps::UniqueID<Tag>> {
     template <typename FormatContext>
     auto format(::jps::UniqueID<Tag> const& p_id, FormatContext& p_ctx) const
     {
-        return fmt::format_to(p_ctx.out(), "{}", p_id.m_value);
+        return fmt::format_to(p_ctx.out(), "{}", p_id.mValue);
     }
 };
 } // namespace fmt

@@ -14,7 +14,11 @@ std::vector<std::tuple<double, double>> intoTuples(const auto& in)
     std::vector<std::tuple<double, double>> tuples{};
     tuples.reserve(in.size());
     for(const auto& pt : in) {
-        tuples.emplace_back(pt.x, pt.y);
+        if constexpr(requires { pt.X; pt.Y; }) {
+            tuples.emplace_back(pt.X, pt.Y);
+        } else {
+            tuples.emplace_back(pt.x, pt.y);
+        }
     }
     return tuples;
 }

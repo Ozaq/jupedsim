@@ -4,8 +4,8 @@
 #include "SocialForceModel.hpp"
 class SocialForceModelBuilder
 {
-    double _bodyForce;
-    double _friction;
+    double bodyForce;
+    double friction;
 
 public:
     SocialForceModelBuilder(double bodyForce, double friction);

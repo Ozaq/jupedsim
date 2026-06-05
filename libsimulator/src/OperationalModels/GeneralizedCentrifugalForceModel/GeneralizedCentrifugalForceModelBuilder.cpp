@@ -12,26 +12,26 @@ GeneralizedCentrifugalForceModelBuilder::GeneralizedCentrifugalForceModelBuilder
     double intp_widthwall,
     double maxfped,
     double maxfwall)
-    : _nuped(nuped)
-    , _nuwall(nuwall)
-    , _dist_effPed(dist_effPed)
-    , _dist_effWall(dist_effWall)
-    , _intp_widthped(intp_widthped)
-    , _intp_widthwall(intp_widthwall)
-    , _maxfped(maxfped)
-    , _maxfwall(maxfwall)
+    : nuped(nuped)
+    , nuwall(nuwall)
+    , distEffPed(dist_effPed)
+    , distEffWall(dist_effWall)
+    , intpWidthped(intp_widthped)
+    , intpWidthwall(intp_widthwall)
+    , maxfped(maxfped)
+    , maxfwall(maxfwall)
 {
 }
 
 GeneralizedCentrifugalForceModel GeneralizedCentrifugalForceModelBuilder::Build()
 {
     return GeneralizedCentrifugalForceModel(
-        _nuped,
-        _nuwall,
-        _dist_effPed,
-        _dist_effWall,
-        _intp_widthped,
-        _intp_widthwall,
-        _maxfped,
-        _maxfwall);
+        nuped,
+        nuwall,
+        distEffPed,
+        distEffWall,
+        intpWidthped,
+        intpWidthwall,
+        maxfped,
+        maxfwall);
 }

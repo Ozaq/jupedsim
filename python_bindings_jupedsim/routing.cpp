@@ -36,13 +36,13 @@ void init_routing(py::module_& m)
         .def("mesh", [](const RoutingEngine& routingEngine) {
             const auto mesh = routingEngine.MeshData();
             const auto polygonCount = mesh->CountPolygons();
-            using Ind = decltype(mesh->Polygons(0).vertices);
+            using Ind = decltype(mesh->Polygons(0).Vertices);
             std::vector<Ind> polys;
             polys.reserve(polygonCount);
             for(size_t index = 0; index < polygonCount; ++index) {
                 const auto& poly = mesh->Polygons(index);
-                const auto& vertices = poly.vertices;
-                polys.emplace_back(mesh->Polygons(index).vertices);
+                const auto& Vertices = poly.Vertices;
+                polys.emplace_back(mesh->Polygons(index).Vertices);
             }
             return std::make_tuple(intoTuples(mesh->FVertices()), polys);
         });

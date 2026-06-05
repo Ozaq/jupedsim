@@ -63,9 +63,9 @@ double Ellipse::EffectiveDistanceToEllipse(
     const Point& orientation_second) const
 {
     Point E2inE1 = center_second.TransformToEllipseCoordinates(
-        center_first, orientation_first.x, orientation_first.y);
+        center_first, orientation_first.X, orientation_first.Y);
     Point E1inE2 = center_first.TransformToEllipseCoordinates(
-        center_second, orientation_second.x, orientation_second.y);
+        center_second, orientation_second.X, orientation_second.Y);
 
     Point R1 =
         this->PointOnEllipse(E2inE1, scale_first, center_first, speed_first, orientation_first);
@@ -95,13 +95,13 @@ Point Ellipse::PointOnEllipse(
     double speed,
     const Point& orientation) const
 {
-    double x = P.x, y = P.y;
+    double x = P.X, y = P.Y;
     double r = x * x + y * y;
 
     // Handle degenerate case when P is very close to the ellipse center
     if(r < J_EPS * J_EPS) {
         Point CP(this->GetEA(speed), 0);
-        return CP.TransformToCartesianCoordinates(center, orientation.x, orientation.y);
+        return CP.TransformToCartesianCoordinates(center, orientation.X, orientation.Y);
     }
 
     r = sqrt(r);
@@ -112,8 +112,8 @@ Point Ellipse::PointOnEllipse(
     double a = GetEA(speed);
     double b = GetEB(scale);
     Point S;
-    S.x = a * cosTheta;
-    S.y = b * sinTheta;
+    S.X = a * cosTheta;
+    S.Y = b * sinTheta;
 
-    return S.TransformToCartesianCoordinates(center, orientation.x, orientation.y);
+    return S.TransformToCartesianCoordinates(center, orientation.X, orientation.Y);
 }

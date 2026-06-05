@@ -9,13 +9,13 @@
 class Point
 {
 public:
-    double x{};
-    double y{};
+    double X{};
+    double Y{};
 
 public:
-    Point(double x = 0, double y = 0) : x(x), y(y) {};
+    Point(double x = 0, double y = 0) : X(x), Y(y) {};
 
-    bool isZeroLength() const;
+    bool IsZeroLength() const;
 
     /// Norm
     double Norm() const;
@@ -31,12 +31,12 @@ public:
     std::tuple<double, Point> NormAndNormalized() const;
 
     /// dot product
-    inline double ScalarProduct(const Point& v) const { return x * v.x + y * v.y; }
+    inline double ScalarProduct(const Point& v) const { return X * v.X + Y * v.Y; }
 
     inline double CrossProduct(const Point& p) const { return Determinant(p); }
 
     /// determinant of the square matrix formed by the vectors [ this, v]
-    inline double Determinant(const Point& v) const { return x * v.y - y * v.x; }
+    inline double Determinant(const Point& v) const { return X * v.Y - Y * v.X; }
 
     Point TransformToEllipseCoordinates(const Point& center, double cphi, double sphi) const;
     /// translation and rotation in cartesian system
@@ -93,13 +93,13 @@ const Point operator/(const Point& p, const double f);
 
 template <>
 struct fmt::formatter<Point> {
-    char presentation{'f'};
+    char Presentation{'f'};
 
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
 
     template <typename FormatContext>
     auto format(const Point& p, FormatContext& ctx) const
     {
-        return fmt::format_to(ctx.out(), "({}, {})", p.x, p.y);
+        return fmt::format_to(ctx.out(), "({}, {})", p.X, p.Y);
     }
 };

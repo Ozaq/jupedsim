@@ -32,13 +32,13 @@ class Profiler
     static Profiler profiler;
 
 public:
-    static Profiler& instance() noexcept { return profiler; };
+    static Profiler& Instance() noexcept { return profiler; };
 
-    static void enable();
-    static void disable();
+    static void Enable();
+    static void Disable();
 
-    static void dumpAndReset(const std::string& filename);
-    inline bool isEnabled() const { return enabled; }
+    static void DumpAndReset(const std::string& filename);
+    inline bool IsEnabled() const { return enabled; }
 
 private:
     Profiler() = default;
@@ -50,5 +50,5 @@ private:
     void createSession();
     void writeAndResetSession(const std::string& filename);
     bool enabled{false};
-    std::unique_ptr<perfetto::TracingSession> tracing_session{};
+    std::unique_ptr<perfetto::TracingSession> tracingSession{};
 };

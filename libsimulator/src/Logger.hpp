@@ -15,10 +15,10 @@ public:
     using LogCallback = std::function<void(const std::string& msg)>;
 
 private:
-    LogCallback debug_msg_cb{};
-    LogCallback info_msg_cb{};
-    LogCallback warning_msg_cb{};
-    LogCallback error_msg_cb{};
+    LogCallback debugMsgCb{};
+    LogCallback infoMsgCb{};
+    LogCallback warningMsgCb{};
+    LogCallback errorMsgCb{};
 
 public:
     static Logger& Instance();

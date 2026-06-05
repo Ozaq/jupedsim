@@ -4,13 +4,13 @@
 #include <fmt/core.h>
 
 struct WarpDriverModelData {
-    double radius{0.15};
-    double v0{1.2};
-    double stuckTime{0.0}; // elapsed time since anchor was set
-    double anchorX{0.0}; // position when stuck tracking began
-    double anchorY{0.0};
-    double detourTime{0.0}; // remaining time in detour mode
-    int detourSide{1}; // +1 = left, -1 = right of desired direction
+    double Radius{0.15};
+    double V0{1.2};
+    double StuckTime{0.0}; // elapsed time since anchor was set
+    double AnchorX{0.0}; // position when stuck tracking began
+    double AnchorY{0.0};
+    double DetourTime{0.0}; // remaining time in detour mode
+    int DetourSide{1}; // +1 = left, -1 = right of desired direction
 };
 
 template <>
@@ -21,6 +21,6 @@ struct fmt::formatter<WarpDriverModelData> {
     template <typename FormatContext>
     auto format(const WarpDriverModelData& m, FormatContext& ctx) const
     {
-        return fmt::format_to(ctx.out(), "WarpDriver[radius={}, v0={}]", m.radius, m.v0);
+        return fmt::format_to(ctx.out(), "WarpDriver[Radius ={}, V0 ={}]", m.Radius, m.V0);
     }
 };

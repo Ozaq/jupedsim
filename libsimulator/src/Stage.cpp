@@ -88,7 +88,7 @@ Waypoint::Waypoint(Point position_, double distance_) : position(position_), dis
 
 bool Waypoint::IsCompleted(const GenericAgent& agent)
 {
-    const auto actual_distance = (agent.pos - position).Norm();
+    const auto actual_distance = (agent.Pos - position).Norm();
     return actual_distance <= distance;
 }
 
@@ -115,9 +115,9 @@ Exit::Exit(Polygon area_, std::vector<GenericAgent::ID>& toRemove_)
 
 bool Exit::IsCompleted(const GenericAgent& agent)
 {
-    const bool hasReachedExit = area.IsInside(agent.pos);
+    const bool hasReachedExit = area.IsInside(agent.Pos);
     if(hasReachedExit) {
-        toRemove.push_back(agent.id);
+        toRemove.push_back(agent.AgentID);
     }
     return hasReachedExit;
 }
@@ -145,11 +145,11 @@ bool NotifiableWaitingSet::IsCompleted(const GenericAgent& agent)
     if(state == WaitingSetState::Active) {
         return false;
     }
-    const auto find_iter = std::find(std::begin(occupants), std::end(occupants), agent.id);
+    const auto find_iter = std::find(std::begin(occupants), std::end(occupants), agent.AgentID);
     if(find_iter != std::end(occupants)) {
         return true;
     }
-    const auto distance = (agent.pos - slots[0]).Norm();
+    const auto distance = (agent.Pos - slots[0]).Norm();
     return distance <= 1;
 }
 
@@ -162,7 +162,7 @@ Point NotifiableWaitingSet::Target(const GenericAgent& agent)
     const auto next_slot_index = std::min(occupants.size(), slots.size() - 1);
 
     for(size_t index = 0; index < next_slot_index; ++index) {
-        if(agent.id == occupants[index]) {
+        if(agent.AgentID == occupants[index]) {
             return slots[index];
         }
     }
@@ -205,9 +205,9 @@ NotifiableQueue::NotifiableQueue(std::vector<Point> slots_) : slots(std::move(sl
 
 bool NotifiableQueue::IsCompleted(const GenericAgent& agent)
 {
-    const bool completed = exitingThisUpdate.contains(agent.id);
+    const bool completed = exitingThisUpdate.contains(agent.AgentID);
     if(completed) {
-        exitingThisUpdate.erase(agent.id);
+        exitingThisUpdate.erase(agent.AgentID);
     }
     return completed;
 }
@@ -215,7 +215,7 @@ bool NotifiableQueue::IsCompleted(const GenericAgent& agent)
 Point NotifiableQueue::Target(const GenericAgent& agent)
 {
 
-    if(const auto index_opt = IndexInContainer(occupants, agent.id); index_opt) {
+    if(const auto index_opt = IndexInContainer(occupants, agent.AgentID); index_opt) {
         return slots[*index_opt];
     }
 

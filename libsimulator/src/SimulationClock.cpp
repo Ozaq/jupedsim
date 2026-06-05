@@ -3,26 +3,26 @@
 
 #include <cstdint>
 
-SimulationClock::SimulationClock(double dT) : _dT(dT)
+SimulationClock::SimulationClock(double dT) : dT(dT)
 {
 }
 
 void SimulationClock::Advance()
 {
-    ++_iteration;
+    ++iteration;
 }
 
 double SimulationClock::ElapsedTime() const
 {
-    return _dT * _iteration;
+    return dT * iteration;
 }
 
 uint64_t SimulationClock::Iteration() const
 {
-    return _iteration;
+    return iteration;
 }
 
-double SimulationClock::dT() const
+double SimulationClock::DT() const
 {
-    return _dT;
+    return dT;
 }

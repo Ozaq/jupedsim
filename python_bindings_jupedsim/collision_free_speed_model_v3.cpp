@@ -31,17 +31,17 @@ void init_collision_free_speed_model_v3(py::module_& m)
                         double thetaMaxUpperBound,
                         double agentBuffer) {
                 return CollisionFreeSpeedModelV3Data{
-                    .strengthNeighborRepulsion = strengthNeighborRepulsion,
-                    .rangeNeighborRepulsion = rangeNeighborRepulsion,
-                    .strengthGeometryRepulsion = strengthGeometryRepulsion,
-                    .rangeGeometryRepulsion = rangeGeometryRepulsion,
-                    .rangeXScale = rangeXScale,
-                    .rangeYScale = rangeYScale,
-                    .thetaMaxUpperBound = thetaMaxUpperBound,
-                    .agentBuffer = agentBuffer,
-                    .timeGap = timeGap,
-                    .v0 = desiredSpeed,
-                    .radius = radius};
+                    .StrengthNeighborRepulsion = strengthNeighborRepulsion,
+                    .RangeNeighborRepulsion = rangeNeighborRepulsion,
+                    .StrengthGeometryRepulsion = strengthGeometryRepulsion,
+                    .RangeGeometryRepulsion = rangeGeometryRepulsion,
+                    .RangeXScale = rangeXScale,
+                    .RangeYScale = rangeYScale,
+                    .ThetaMaxUpperBound = thetaMaxUpperBound,
+                    .AgentBuffer = agentBuffer,
+                    .TimeGap = timeGap,
+                    .V0 = desiredSpeed,
+                    .Radius = radius};
             }),
             py::kw_only(),
             py::arg("strength_neighbor_repulsion"),
@@ -57,20 +57,20 @@ void init_collision_free_speed_model_v3(py::module_& m)
             py::arg("agent_buffer") = 0.0)
         .def_readwrite(
             "strength_neighbor_repulsion",
-            &CollisionFreeSpeedModelV3Data::strengthNeighborRepulsion)
+            &CollisionFreeSpeedModelV3Data::StrengthNeighborRepulsion)
         .def_readwrite(
-            "range_neighbor_repulsion", &CollisionFreeSpeedModelV3Data::rangeNeighborRepulsion)
+            "range_neighbor_repulsion", &CollisionFreeSpeedModelV3Data::RangeNeighborRepulsion)
         .def_readwrite(
             "strength_geometry_repulsion",
-            &CollisionFreeSpeedModelV3Data::strengthGeometryRepulsion)
+            &CollisionFreeSpeedModelV3Data::StrengthGeometryRepulsion)
         .def_readwrite(
-            "range_geometry_repulsion", &CollisionFreeSpeedModelV3Data::rangeGeometryRepulsion)
-        .def_readwrite("range_x_scale", &CollisionFreeSpeedModelV3Data::rangeXScale)
-        .def_readwrite("range_y_scale", &CollisionFreeSpeedModelV3Data::rangeYScale)
+            "range_geometry_repulsion", &CollisionFreeSpeedModelV3Data::RangeGeometryRepulsion)
+        .def_readwrite("range_x_scale", &CollisionFreeSpeedModelV3Data::RangeXScale)
+        .def_readwrite("range_y_scale", &CollisionFreeSpeedModelV3Data::RangeYScale)
         .def_readwrite(
-            "theta_max_upper_bound", &CollisionFreeSpeedModelV3Data::thetaMaxUpperBound)
-        .def_readwrite("agent_buffer", &CollisionFreeSpeedModelV3Data::agentBuffer)
-        .def_readwrite("time_gap", &CollisionFreeSpeedModelV3Data::timeGap)
-        .def_readwrite("desired_speed", &CollisionFreeSpeedModelV3Data::v0)
-        .def_readwrite("radius", &CollisionFreeSpeedModelV3Data::radius);
+            "theta_max_upper_bound", &CollisionFreeSpeedModelV3Data::ThetaMaxUpperBound)
+        .def_readwrite("agent_buffer", &CollisionFreeSpeedModelV3Data::AgentBuffer)
+        .def_readwrite("time_gap", &CollisionFreeSpeedModelV3Data::TimeGap)
+        .def_readwrite("desired_speed", &CollisionFreeSpeedModelV3Data::V0)
+        .def_readwrite("radius", &CollisionFreeSpeedModelV3Data::Radius);
 }

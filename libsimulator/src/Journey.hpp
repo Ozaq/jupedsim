@@ -28,7 +28,7 @@ class FixedTransitionDescription
 public:
     FixedTransitionDescription(BaseStage::ID next_) : next(next_)
     {
-        if(next_ == BaseStage::ID::Invalid.getID()) {
+        if(next_ == BaseStage::ID::Invalid.GetID()) {
             throw SimulationError("Can not create fixed transition from invalid stage id.");
         }
     };
@@ -46,7 +46,7 @@ public:
         : weightedStages(weightedStages_)
     {
         for(const auto& [stageId, _] : weightedStages) {
-            if(stageId == BaseStage::ID::Invalid.getID()) {
+            if(stageId == BaseStage::ID::Invalid.GetID()) {
                 throw SimulationError(
                     "Can not create round robin transition from invalid stage id.");
             }
@@ -69,7 +69,7 @@ public:
         : targetCandidates(std::move(targetCandidates_))
     {
         for(const auto& stageId : targetCandidates) {
-            if(stageId == BaseStage::ID::Invalid.getID()) {
+            if(stageId == BaseStage::ID::Invalid.GetID()) {
                 throw SimulationError(
                     "Can not create least targeted transition from invalid stage id.");
             }
@@ -161,8 +161,8 @@ public:
 };
 
 struct JourneyNode {
-    BaseStage* stage;
-    std::unique_ptr<Transition> transition;
+    BaseStage* Stage;
+    std::unique_ptr<Transition> TransitionPtr;
 };
 
 class Journey
@@ -179,19 +179,19 @@ public:
 
     Journey(std::map<BaseStage::ID, JourneyNode> stages_) : stages(std::move(stages_)) {}
 
-    ID Id() const { return id; }
+    ID GetID() const { return id; }
 
     std::tuple<Point, BaseStage::ID> Target(const GenericAgent& agent) const
     {
-        auto& node = stages.at(agent.stageId);
-        auto stage = node.stage;
-        const auto& transition = node.transition;
+        auto& node = stages.at(agent.StageID);
+        auto stage = node.Stage;
+        const auto& transition = node.TransitionPtr;
 
         if(stage->IsCompleted(agent)) {
             stage = transition->NextStage();
         }
 
-        return std::make_tuple(stage->Target(agent), stage->Id());
+        return std::make_tuple(stage->Target(agent), stage->GetID());
     }
 
     size_t CountStages() const { return stages.size(); }

@@ -4,9 +4,9 @@
 #include <fmt/core.h>
 
 struct CollisionFreeSpeedModelData {
-    double timeGap{1};
-    double v0{1.2};
-    double radius{0.2};
+    double TimeGap{1};
+    double V0{1.2};
+    double Radius{0.2};
 };
 
 template <>
@@ -19,9 +19,9 @@ struct fmt::formatter<CollisionFreeSpeedModelData> {
     {
         return fmt::format_to(
             ctx.out(),
-            "CollisionFreeSpeedModel[timeGap={}, v0={}, radius={}])",
-            m.timeGap,
-            m.v0,
-            m.radius);
+            "CollisionFreeSpeedModel[TimeGap ={}, V0 ={}, Radius ={}])",
+            m.TimeGap,
+            m.V0,
+            m.Radius);
     }
 };

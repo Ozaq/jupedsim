@@ -4,7 +4,7 @@
 #include <fmt/format.h>
 #include <gtest/gtest.h>
 
-static GenericAgent make_agent(GenericAgent::Model model)
+static GenericAgent make_agent(GenericAgent::ModelData model)
 {
     return GenericAgent(
         GenericAgent::ID{},

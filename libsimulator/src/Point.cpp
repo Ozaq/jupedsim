@@ -5,10 +5,10 @@
 
 #include <limits>
 
-bool Point::isZeroLength() const
+bool Point::IsZeroLength() const
 {
     constexpr double epsilon = 1e-6;
-    return (std::abs(x) < epsilon && std::abs(y) < epsilon);
+    return (std::abs(X) < epsilon && std::abs(Y) < epsilon);
 }
 
 double Point::Norm() const
@@ -25,7 +25,7 @@ std::tuple<double, Point> Point::NormAndNormalized() const
 {
     const double norm = Norm();
     if(norm > std::numeric_limits<double>::epsilon())
-        return std::make_tuple(norm, (Point(x, y) / norm));
+        return std::make_tuple(norm, (Point(X, Y) / norm));
     else
         return std::make_tuple(0.0, Point(0.0, 0.0));
 }
@@ -45,7 +45,7 @@ std::tuple<double, Point> Point::NormAndNormalized() const
  */
 Point Point::TransformToEllipseCoordinates(const Point& center, double cphi, double sphi) const
 {
-    Point p = Point(x, y);
+    Point p = Point(X, Y);
     return (p - center).Rotate(cphi, -sphi);
 }
 /**
@@ -65,7 +65,7 @@ Point Point::TransformToEllipseCoordinates(const Point& center, double cphi, dou
 Point Point::TransformToCartesianCoordinates(const Point& center, double cphi, double sphi) const
 {
 
-    Point p = Point(x, y);
+    Point p = Point(X, Y);
     return (p.Rotate(cphi, sphi) + center);
 }
 
@@ -77,12 +77,12 @@ Point Point::TransformToCartesianCoordinates(const Point& center, double cphi, d
  */
 Point Point::Rotate(double ctheta, double stheta) const
 {
-    return Point(x * ctheta - y * stheta, x * stheta + y * ctheta);
+    return Point(X * ctheta - Y * stheta, X * stheta + Y * ctheta);
 }
 
 Point Point::Rotate90Deg() const
 {
-    return {-y, x};
+    return {-Y, X};
 }
 
 bool Point::IsUnitLength() const
@@ -92,17 +92,17 @@ bool Point::IsUnitLength() const
 
 const Point Point::operator+(const Point& p) const
 {
-    return Point(x + p.x, y + p.y);
+    return Point(X + p.X, Y + p.Y);
 }
 
 const Point Point::operator-(const Point& p) const
 {
-    return Point(x - p.x, y - p.y);
+    return Point(X - p.X, Y - p.Y);
 }
 
 bool Point::operator==(const Point& p) const
 {
-    return x == p.x && y == p.y;
+    return X == p.X && Y == p.Y;
 }
 
 bool Point::operator!=(const Point& p) const
@@ -112,19 +112,19 @@ bool Point::operator!=(const Point& p) const
 
 const Point operator*(const Point& p, double f)
 {
-    return Point(p.x * f, p.y * f);
+    return Point(p.X * f, p.Y * f);
 }
 
 Point& Point::operator+=(const Point& p)
 {
-    x += p.x;
-    y += p.y;
+    X += p.X;
+    Y += p.Y;
     return *this;
 }
 
 Point Point::operator-() const
 {
-    return Point(-x, -y);
+    return Point(-X, -Y);
 }
 
 const Point operator/(const Point& p, double f)
@@ -132,18 +132,18 @@ const Point operator/(const Point& p, double f)
     static auto constexpr eps =
         std::numeric_limits<double>::epsilon() * std::numeric_limits<double>::epsilon();
     if(f > eps)
-        return Point(p.x / f, p.y / f);
+        return Point(p.X / f, p.Y / f);
     else {
         LOG_WARNING("Point::operator/ dividend {} is too small. Using 1 instead.", f);
-        return Point(p.x, p.y);
+        return Point(p.X, p.Y);
     }
 }
 
 bool Point::operator<(const Point& rhs) const
 {
-    if(x < rhs.x)
+    if(X < rhs.X)
         return true;
-    else if((x == rhs.x) && (y < rhs.y))
+    else if((X == rhs.X) && (Y < rhs.Y))
         return true;
     return false;
 }

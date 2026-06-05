@@ -25,11 +25,11 @@ void init_warp_driver_model(py::module_& m)
     py::class_<WarpDriverModelData>(m, "WarpDriverModelState")
         .def(
             py::init([](double desired_speed, double radius) {
-                return WarpDriverModelData{.radius = radius, .v0 = desired_speed};
+                return WarpDriverModelData{.Radius = radius, .V0 = desired_speed};
             }),
             py::kw_only(),
             py::arg("desired_speed") = 1.2,
             py::arg("radius") = 0.15)
-        .def_readwrite("radius", &WarpDriverModelData::radius)
-        .def_readwrite("desired_speed", &WarpDriverModelData::v0);
+        .def_readwrite("radius", &WarpDriverModelData::Radius)
+        .def_readwrite("desired_speed", &WarpDriverModelData::V0);
 }

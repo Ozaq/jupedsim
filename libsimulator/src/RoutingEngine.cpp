@@ -54,36 +54,36 @@ Point RoutingEngine::ComputeWaypoint(Point currentPosition, Point destination)
 }
 
 struct SearchState {
-    double g_value{};
-    double h_value{};
-    CDT::Face_handle id{};
-    SearchState* parent{};
+    double GValue{};
+    double HValue{};
+    CDT::Face_handle ID{};
+    SearchState* Parent{};
 
     SearchState(double g, double h, CDT::Face_handle _id, SearchState* _parent)
-        : g_value(g), h_value(h), id(_id), parent(_parent)
+        : GValue(g), HValue(h), ID(_id), Parent(_parent)
     {
     }
 
-    double f_value() const { return g_value + h_value; }
-    bool parents_contain(CDT::Face_handle ancestor_id) const
+    double FValue() const { return GValue + HValue; }
+    bool ParentsContain(CDT::Face_handle ancestor_id) const
     {
         const SearchState* pivot = this;
         while(pivot != nullptr) {
-            if(pivot->id == ancestor_id) {
+            if(pivot->ID == ancestor_id) {
                 return true;
             }
-            pivot = pivot->parent;
+            pivot = pivot->Parent;
         }
         return false;
     }
-    std::vector<CDT::Face_handle> path() const
+    std::vector<CDT::Face_handle> Path() const
     {
         std::vector<CDT::Face_handle> p{};
         p.reserve(16);
         const SearchState* pivot = this;
         while(pivot != nullptr) {
-            p.emplace_back(pivot->id);
-            pivot = pivot->parent;
+            p.emplace_back(pivot->ID);
+            pivot = pivot->Parent;
         }
         std::reverse(std::begin(p), std::end(p));
         return p;
@@ -100,7 +100,7 @@ struct FaceHandleHash {
 
 bool CompareSearchStatesGt(const SearchState* a, const SearchState* b)
 {
-    return a->f_value() > b->f_value();
+    return a->FValue() > b->FValue();
 }
 
 double length_of_path(const std::vector<Point>& path)
@@ -114,10 +114,10 @@ double length_of_path(const std::vector<Point>& path)
 
 std::vector<Point> RoutingEngine::ComputeAllWaypoints(Point currentPosition, Point destination)
 {
-    const auto from_pos = CDT::Point{currentPosition.x, currentPosition.y};
-    const auto to_pos = CDT::Point{destination.x, destination.y};
-    const auto from = find_face(from_pos);
-    const auto to = find_face(to_pos);
+    const auto from_pos = CDT::Point{currentPosition.X, currentPosition.Y};
+    const auto to_pos = CDT::Point{destination.X, destination.Y};
+    const auto from = findFace(from_pos);
+    const auto to = findFace(to_pos);
 
     if(from == to) {
         return std::vector<Point>{currentPosition, destination};
@@ -138,9 +138,9 @@ std::vector<Point> RoutingEngine::ComputeAllWaypoints(Point currentPosition, Poi
         std::pop_heap(open_states.begin(), open_states.end(), CompareSearchStatesGt);
         SearchState* current_state = open_states.back();
         open_states.pop_back();
-        closed_states.emplace(current_state->id, current_state);
+        closed_states.emplace(current_state->ID, current_state);
 
-        if(current_state->f_value() >= path_length) {
+        if(current_state->FValue() >= path_length) {
             // This search node's f-value already exceeds our path's length, and since the f-value
             // is underestimation of the path length the exact path cannot be shorter than what we
             // have
@@ -149,13 +149,13 @@ std::vector<Point> RoutingEngine::ComputeAllWaypoints(Point currentPosition, Poi
 
         // Generate successors
         for(int idx = 0; idx < 3; ++idx) {
-            const auto target = current_state->id->neighbor(idx);
+            const auto target = current_state->ID->neighbor(idx);
             if(!target->get_in_domain()) {
                 // Not a neighboring triangle.
                 continue;
             }
             // Do not add search nodes for nodes already in the ancestor list of this path
-            if(current_state->parents_contain(target)) {
+            if(current_state->ParentsContain(target)) {
                 continue;
             }
 
@@ -164,13 +164,13 @@ std::vector<Point> RoutingEngine::ComputeAllWaypoints(Point currentPosition, Poi
                 continue;
             }
 
-            // The shared edge between `current_state->id` and `target` is the edge
+            // The shared edge between `current_state->ID` and `target` is the edge
             // opposite vertex `idx` of the CURRENT face. CGAL's neighbor indexing is
             // not symmetric: the index of `target` in current's neighbor list differs
             // from the index of `current` in target's neighbor list, so querying
             // `cdt.segment(target, idx)` returns an unrelated edge of `target` and
             // produces bogus g/h values that mis-rank successors in A*.
-            const auto edge = cdt.segment(current_state->id, idx);
+            const auto edge = cdt.segment(current_state->ID, idx);
 
             // For all remaining nodes compute g/h values
             // The h-value is the distance between the goal and the closest point on the edge
@@ -194,13 +194,13 @@ std::vector<Point> RoutingEngine::ComputeAllWaypoints(Point currentPosition, Poi
             // by these edges. Thus, if the entry edges of the triangles corresponding to s′ and
             // s form an angle θ, this estimate is calculated as g(s) + rθ. NOTE: Right now this
             // is always g(s) + zero as we assume point size agents (for now)
-            const double g_value_2 = current_state->g_value + 0;
+            const double g_value_2 = current_state->GValue + 0;
 
             //  Another lower bound value for g(s′) is g(s)+(h(s)−h(s′)), or the parent state’s
             //  g-value plus the difference between its h-value and that of the child state.
             //  This is an underestimate because the Euclidean distance metric used for the
             //  heuristic is consistent.
-            const double g_value_3 = current_state->g_value + current_state->h_value - h_value;
+            const double g_value_3 = current_state->GValue + current_state->HValue - h_value;
 
             const double g_value = std::max(g_value_1, std::max(g_value_2, g_value_3));
 
@@ -216,7 +216,7 @@ std::vector<Point> RoutingEngine::ComputeAllWaypoints(Point currentPosition, Poi
                     // Now compute the actual path length via funnel algorithm
                     // store path and length if this variant is the shortest found so far
                     const SearchState dest_state{g_value, h_value, to, current_state};
-                    const auto vertex_ids = dest_state.path();
+                    const auto vertex_ids = dest_state.Path();
                     const auto found_path =
                         straightenPath(currentPosition, destination, vertex_ids);
                     const double found_path_length = length_of_path(found_path);
@@ -239,22 +239,22 @@ std::vector<Point> RoutingEngine::ComputeAllWaypoints(Point currentPosition, Poi
             if(auto iter = std::find_if(
                    std::begin(open_states),
                    std::end(open_states),
-                   [t2](const auto& s) { return s->id == t2; });
+                   [t2](const auto& s) { return s->ID == t2; });
                iter != std::end(open_states)) {
-                if(auto* s = *iter; s->g_value > g_value) {
-                    s->g_value = g_value;
-                    s->parent = current_state;
+                if(auto* s = *iter; s->GValue > g_value) {
+                    s->GValue = g_value;
+                    s->Parent = current_state;
                     // As the g_value got modified, the heap needs to be entirely remade.
                     std::make_heap(open_states.begin(), open_states.end(), CompareSearchStatesGt);
                 }
             } else if(auto iter = closed_states.find(target); iter != closed_states.end()) {
                 auto* s = iter->second;
-                if(s->g_value > g_value) {
-                    s->g_value = g_value;
-                    s->parent = current_state;
+                if(s->GValue > g_value) {
+                    s->GValue = g_value;
+                    s->Parent = current_state;
                     open_states.push_back(s);
                     std::push_heap(open_states.begin(), open_states.end(), CompareSearchStatesGt);
-                    closed_states.erase(s->id);
+                    closed_states.erase(s->ID);
                 }
             } else {
                 all_search_states.emplace_back(g_value, h_value, target, current_state);
@@ -270,7 +270,7 @@ std::vector<Point> RoutingEngine::ComputeAllWaypoints(Point currentPosition, Poi
 bool RoutingEngine::IsRoutable(Point p) const
 {
     try {
-        find_face({p.x, p.y});
+        findFace({p.X, p.Y});
     } catch(const SimulationError&) {
         return false;
     }
@@ -281,7 +281,7 @@ void RoutingEngine::Update()
 {
 }
 
-CDT::Face_handle RoutingEngine::find_face(K::Point_2 p) const
+CDT::Face_handle RoutingEngine::findFace(K::Point_2 p) const
 {
     const auto face = cdt.locate(p);
     if(face == nullptr || cdt.is_infinite(face) || !face->get_in_domain()) {
@@ -332,8 +332,8 @@ RoutingEngine::straightenPath(Point from, Point to, const std::vector<CDT::Face_
         const auto portal = index_portal < portalCount ? get_edge(face_from, path[index_portal]) :
                                                          LineSegment(to, to);
 
-        const auto line_segment_left = portal.p2;
-        const auto line_segment_right = portal.p1;
+        const auto line_segment_left = portal.P2;
+        const auto line_segment_right = portal.P1;
         const auto line_segment_direction = (line_segment_right - line_segment_left).Normalized();
         const auto candidate_left = line_segment_left + (line_segment_direction * 0.2);
         const auto candidate_right = line_segment_right - (line_segment_direction * 0.2);

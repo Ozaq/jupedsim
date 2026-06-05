@@ -5,12 +5,12 @@
 
 class WarpDriverModelBuilder
 {
-    double _timeHorizon;
-    double _stepSize;
-    double _sigma;
-    double _timeUncertainty;
-    double _velocityUncertaintyX;
-    double _velocityUncertaintyY;
+    double timeHorizon;
+    double stepSize;
+    double sigma;
+    double timeUncertainty;
+    double velocityUncertaintyX;
+    double velocityUncertaintyY;
 
 public:
     WarpDriverModelBuilder(

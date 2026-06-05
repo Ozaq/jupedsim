@@ -10,18 +10,20 @@
 template <typename IteratorFirst, typename IteratorSecond = IteratorFirst>
 class IteratorPair
 {
-    IteratorFirst _it_first;
-    IteratorSecond _it_second;
+    IteratorFirst itFirst;
+    IteratorSecond itSecond;
 
 public:
-    IteratorPair(IteratorFirst it1, IteratorSecond it2) : _it_first(it1), _it_second(it2) {}
+    IteratorPair(IteratorFirst it1, IteratorSecond it2) : itFirst(it1), itSecond(it2) {}
 
-    IteratorFirst first() const { return _it_first; }
-    IteratorSecond second() const { return _it_second; }
+    IteratorFirst First() const { return itFirst; }
+    IteratorSecond Second() const { return itSecond; }
 
-    IteratorFirst begin() const { return first(); }
-    IteratorSecond end() const { return second(); }
+    // NOLINTNEXTLINE(readability-identifier-naming)
+    IteratorFirst begin() const { return First(); }
+    // NOLINTNEXTLINE(readability-identifier-naming)
+    IteratorSecond end() const { return Second(); }
 
-    bool empty() const { return _it_first == _it_second; }
-    size_t size() const { return std::distance(_it_first, _it_second); }
+    bool Empty() const { return itFirst == itSecond; }
+    size_t Size() const { return std::distance(itFirst, itSecond); }
 };

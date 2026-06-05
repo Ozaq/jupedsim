@@ -4,10 +4,10 @@
 #include "CollisionFreeSpeedModel.hpp"
 class CollisionFreeSpeedModelBuilder
 {
-    double _aPed;
-    double _DPed;
-    double _aWall;
-    double _DWall;
+    double aPed;
+    double dPed;
+    double aWall;
+    double dWall;
 
 public:
     CollisionFreeSpeedModelBuilder(double aPed, double DPed, double aWall, double DWall);

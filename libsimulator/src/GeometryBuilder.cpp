@@ -16,20 +16,20 @@
 
 GeometryBuilder& GeometryBuilder::AddAccessibleArea(const std::vector<Point>& lineLoop)
 {
-    _accessibleAreas.emplace_back(lineLoop);
+    accessibleAreas.emplace_back(lineLoop);
     return *this;
 }
 
 GeometryBuilder& GeometryBuilder::ExcludeFromAccessibleArea(const std::vector<Point>& lineLoop)
 {
-    _exclusions.emplace_back(lineLoop);
+    exclusions.emplace_back(lineLoop);
     return *this;
 }
 
 CollisionGeometry GeometryBuilder::Build()
 {
     const std::vector<Poly> accessibleListInput{
-        std::begin(_accessibleAreas), std::end(_accessibleAreas)};
+        std::begin(accessibleAreas), std::end(accessibleAreas)};
     PolyWithHolesList accessibleList{};
 
     CGAL::join(
@@ -43,7 +43,7 @@ CollisionGeometry GeometryBuilder::Build()
 
     auto accessibleArea = *accessibleList.begin();
 
-    const std::vector<Poly> exclusionsListInput{std::begin(_exclusions), std::end(_exclusions)};
+    const std::vector<Poly> exclusionsListInput{std::begin(exclusions), std::end(exclusions)};
     PolyWithHolesList exclusionsList{};
     CGAL::join(
         std::begin(exclusionsListInput),

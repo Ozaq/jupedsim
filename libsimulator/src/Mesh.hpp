@@ -23,9 +23,9 @@ public:
         /// Represent invalid indices, e.g. neightbor index where no adjacent polygon is defined
         static constexpr size_t InvalidIndex{std::numeric_limits<size_t>::max()};
         /// Index into the vertices store of the Mesh
-        std::vector<size_t> vertices{};
+        std::vector<size_t> Vertices{};
         /// Index into the polygon store of the Mesh
-        std::vector<size_t> neighbors{};
+        std::vector<size_t> Neighbors{};
     };
 
 private:

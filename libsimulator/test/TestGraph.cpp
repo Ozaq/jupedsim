@@ -22,10 +22,10 @@ TEST(DirectedGraph, CanConstructSimpleGraphWithVoidData)
     g.AddEdge(v3, v4);
     g.AddEdge(v4, v1);
     const auto graph = g.Build();
-    ASSERT_EQ(graph.Edges(v1).size(), 2);
-    ASSERT_EQ(graph.Edges(v2).size(), 1);
-    ASSERT_EQ(graph.Edges(v3).size(), 1);
-    ASSERT_EQ(graph.Edges(v4).size(), 1);
+    ASSERT_EQ(graph.Edges(v1).Size(), 2);
+    ASSERT_EQ(graph.Edges(v2).Size(), 1);
+    ASSERT_EQ(graph.Edges(v3).Size(), 1);
+    ASSERT_EQ(graph.Edges(v4).Size(), 1);
 }
 
 TEST(DirectedGraph, CanConstructSimpleGraphWithData)
@@ -42,10 +42,10 @@ TEST(DirectedGraph, CanConstructSimpleGraphWithData)
     g.AddEdge(v3, v4, "V3->V4");
     g.AddEdge(v4, v1, "V4->V1");
     const auto graph = g.Build();
-    ASSERT_EQ(graph.Edges(v1).size(), 2);
-    ASSERT_EQ(graph.Edges(v2).size(), 1);
-    ASSERT_EQ(graph.Edges(v3).size(), 1);
-    ASSERT_EQ(graph.Edges(v4).size(), 1);
+    ASSERT_EQ(graph.Edges(v1).Size(), 2);
+    ASSERT_EQ(graph.Edges(v2).Size(), 1);
+    ASSERT_EQ(graph.Edges(v3).Size(), 1);
+    ASSERT_EQ(graph.Edges(v4).Size(), 1);
     ASSERT_EQ(graph.VertexData(v1), "V1");
     ASSERT_EQ(graph.VertexData(v2), "V2");
     ASSERT_EQ(graph.VertexData(v3), "V3");

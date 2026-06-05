@@ -20,49 +20,49 @@ WarpDriverModelBuilder::WarpDriverModelBuilder(
     double timeUncertainty,
     double velocityUncertaintyX,
     double velocityUncertaintyY)
-    : _timeHorizon(timeHorizon)
-    , _stepSize(stepSize)
-    , _sigma(sigma)
-    , _timeUncertainty(timeUncertainty)
-    , _velocityUncertaintyX(velocityUncertaintyX)
-    , _velocityUncertaintyY(velocityUncertaintyY)
+    : timeHorizon(timeHorizon)
+    , stepSize(stepSize)
+    , sigma(sigma)
+    , timeUncertainty(timeUncertainty)
+    , velocityUncertaintyX(velocityUncertaintyX)
+    , velocityUncertaintyY(velocityUncertaintyY)
 {
 }
 
 WarpDriverModel WarpDriverModelBuilder::Build()
 {
-    if(_timeHorizon <= 0.0) {
+    if(timeHorizon <= 0.0) {
         throw SimulationError(
-            "WarpDriverModelBuilder: timeHorizon must be > 0, got {}", _timeHorizon);
+            "WarpDriverModelBuilder: timeHorizon must be > 0, got {}", timeHorizon);
     }
-    if(_stepSize <= 0.0) {
-        throw SimulationError("WarpDriverModelBuilder: stepSize must be > 0, got {}", _stepSize);
+    if(stepSize <= 0.0) {
+        throw SimulationError("WarpDriverModelBuilder: stepSize must be > 0, got {}", stepSize);
     }
-    if(_sigma <= 0.0) {
-        throw SimulationError("WarpDriverModelBuilder: sigma must be > 0, got {}", _sigma);
+    if(sigma <= 0.0) {
+        throw SimulationError("WarpDriverModelBuilder: sigma must be > 0, got {}", sigma);
     }
-    if(_timeUncertainty < 0.0) {
+    if(timeUncertainty < 0.0) {
         throw SimulationError(
-            "WarpDriverModelBuilder: timeUncertainty must be >= 0, got {}", _timeUncertainty);
+            "WarpDriverModelBuilder: timeUncertainty must be >= 0, got {}", timeUncertainty);
     }
-    if(_velocityUncertaintyX < 0.0) {
+    if(velocityUncertaintyX < 0.0) {
         throw SimulationError(
             "WarpDriverModelBuilder: velocityUncertaintyX must be >= 0, got {}",
-            _velocityUncertaintyX);
+            velocityUncertaintyX);
     }
-    if(_velocityUncertaintyY < 0.0) {
+    if(velocityUncertaintyY < 0.0) {
         throw SimulationError(
             "WarpDriverModelBuilder: velocityUncertaintyY must be >= 0, got {}",
-            _velocityUncertaintyY);
+            velocityUncertaintyY);
     }
 
     return WarpDriverModel(
-        _timeHorizon,
-        _stepSize,
-        _sigma,
-        _timeUncertainty,
-        _velocityUncertaintyX,
-        _velocityUncertaintyY,
+        timeHorizon,
+        stepSize,
+        sigma,
+        timeUncertainty,
+        velocityUncertaintyX,
+        velocityUncertaintyY,
         kDefaultNumSamples,
         kDefaultRngSeed);
 }

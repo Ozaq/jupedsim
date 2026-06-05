@@ -31,24 +31,24 @@
 
 class Simulation
 {
-    SimulationClock _clock;
-    StrategicalDecisionSystem _stategicalDecisionSystem{};
-    TacticalDecisionSystem _tacticalDecisionSystem{};
-    OperationalDecisionSystem _operationalDecisionSystem;
-    AgentRemovalSystem<GenericAgent> _agentRemovalSystem{};
-    StageManager _stageManager{};
-    StageSystem _stageSystem{};
-    NeighborhoodSearch<GenericAgent> _neighborhoodSearch{2.2};
+    SimulationClock clock;
+    StrategicalDecisionSystem stategicalDecisionSystem{};
+    TacticalDecisionSystem tacticalDecisionSystem{};
+    OperationalDecisionSystem operationalDecisionSystem;
+    AgentRemovalSystem<GenericAgent> agentRemovalSystem{};
+    StageManager stageManager{};
+    StageSystem stageSystem{};
+    NeighborhoodSearch<GenericAgent> neighborhoodSearch{2.2};
     std::unordered_map<
         CollisionGeometry::ID,
         std::tuple<std::unique_ptr<CollisionGeometry>, std::unique_ptr<RoutingEngine>>>
         geometries{};
-    RoutingEngine* _routingEngine;
-    CollisionGeometry* _geometry;
-    std::vector<GenericAgent> _agents;
-    std::vector<GenericAgent::ID> _removedAgentsInLastIteration;
-    std::unordered_map<Journey::ID, std::unique_ptr<Journey>> _journeys;
-    Timer _timer{};
+    RoutingEngine* routingEngine;
+    CollisionGeometry* geometry;
+    std::vector<GenericAgent> agents;
+    std::vector<GenericAgent::ID> removedAgentsInLastIteration;
+    std::unordered_map<Journey::ID, std::unique_ptr<Journey>> journeys;
+    Timer timer{};
     enum LogLevel { General = 1, Detailed = 2, Debug = 3 };
 
 public:
@@ -88,10 +88,10 @@ public:
     void SwitchGeometry(std::unique_ptr<CollisionGeometry>&& geometry);
     void PushTimer(const std::string_view name, size_t probe_log_level = 0);
     void PopTimer(const std::string_view name);
-    void SetTimerLogLevel(int level) { _timer.setLogLevel(level); };
+    void SetTimerLogLevel(int level) { timer.SetLogLevel(level); };
     TimerEntry::duration_type GetTimerDuration(const std::string_view name) const;
     std::map<std::string, TimerEntry::duration_type> GetTimerDurations() const;
 
 private:
-    void ValidateGeometry(const std::unique_ptr<CollisionGeometry>& geometry) const;
+    void validateGeometry(const std::unique_ptr<CollisionGeometry>& geometry) const;
 };

@@ -10,13 +10,13 @@
 #include <cmath>
 #include <utility>
 
-LineSegment::LineSegment(Point _p1, Point _p2) : p1(std::move(_p1)), p2(std::move(_p2))
+LineSegment::LineSegment(Point _p1, Point _p2) : P1(std::move(_p1)), P2(std::move(_p2))
 {
 }
 
 bool LineSegment::operator==(const LineSegment& other) const
 {
-    return p1 == other.p1 && p2 == other.p2;
+    return P1 == other.P1 && P2 == other.P2;
 }
 
 bool LineSegment::operator!=(const LineSegment& other) const
@@ -26,31 +26,31 @@ bool LineSegment::operator!=(const LineSegment& other) const
 
 bool LineSegment::operator<(const LineSegment& other) const
 {
-    if(p1 < other.p1)
+    if(P1 < other.P1)
         return true;
-    if((p1 == other.p1) && (p2 < other.p2))
+    if((P1 == other.P1) && (P2 < other.P2))
         return true;
     return false;
 }
 
 Point LineSegment::NormalVec() const
 {
-    const Point r = (p2 - p1);
-    return Point(-r.y, r.x).Normalized();
+    const Point r = (P2 - P1);
+    return Point(-r.Y, r.X).Normalized();
 }
 
 double LineSegment::NormalComp(const Point& v) const
 {
     // Normierte Vectoren
-    Point l = (p2 - p1).Normalized();
+    Point l = (P2 - P1).Normalized();
     const Point& n = NormalVec();
 
     double alpha;
 
-    if(fabs(l.x) < J_EPS) {
-        alpha = v.x / n.x;
-    } else if(fabs(l.y) < J_EPS) {
-        alpha = v.y / n.y;
+    if(fabs(l.X) < J_EPS) {
+        alpha = v.X / n.X;
+    } else if(fabs(l.Y) < J_EPS) {
+        alpha = v.Y / n.Y;
     } else {
         alpha = l.CrossProduct(v) / n.CrossProduct(l);
     }
@@ -60,17 +60,17 @@ double LineSegment::NormalComp(const Point& v) const
 
 Point LineSegment::ShortestPoint(const Point& p) const
 {
-    if(p1 == p2)
-        return p1;
+    if(P1 == P2)
+        return P1;
 
-    const Point& t = p1 - p2;
-    double lambda = (p - p2).ScalarProduct(t) / t.ScalarProduct(t);
+    const Point& t = P1 - P2;
+    double lambda = (p - P2).ScalarProduct(t) / t.ScalarProduct(t);
     if(lambda < 0)
-        return p2;
+        return P2;
     else if(lambda > 1)
-        return p1;
+        return P1;
     else
-        return p2 + t * lambda;
+        return P2 + t * lambda;
 }
 
 double LineSegment::DistTo(const Point& p) const
@@ -79,13 +79,13 @@ double LineSegment::DistTo(const Point& p) const
     using PointCGAL = Kernel::Point_2;
     using SegmentCGAL = Kernel::Segment_2;
 
-    PointCGAL point(p.x, p.y);
-    SegmentCGAL segment(PointCGAL(p1.x, p1.y), PointCGAL(p2.x, p2.y));
+    PointCGAL point(p.X, p.Y);
+    SegmentCGAL segment(PointCGAL(P1.X, P1.Y), PointCGAL(P2.X, P2.Y));
 
     return sqrt(CGAL::squared_distance(point, segment));
 }
 
 double LineSegment::LengthSquare() const
 {
-    return (p1 - p2).NormSquare();
+    return (P1 - P2).NormSquare();
 }

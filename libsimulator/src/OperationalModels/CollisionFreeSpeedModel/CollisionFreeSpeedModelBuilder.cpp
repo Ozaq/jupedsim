@@ -8,11 +8,11 @@ CollisionFreeSpeedModelBuilder::CollisionFreeSpeedModelBuilder(
     double DPed,
     double aWall,
     double DWall)
-    : _aPed(aPed), _DPed(DPed), _aWall(aWall), _DWall(DWall)
+    : aPed(aPed), dPed(DPed), aWall(aWall), dWall(DWall)
 {
 }
 
 CollisionFreeSpeedModel CollisionFreeSpeedModelBuilder::Build()
 {
-    return CollisionFreeSpeedModel(_aPed, _DPed, _aWall, _DWall);
+    return CollisionFreeSpeedModel(aPed, dPed, aWall, dWall);
 }

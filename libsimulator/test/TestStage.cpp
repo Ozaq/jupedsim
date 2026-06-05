@@ -7,7 +7,7 @@
 
 class StagesTests : public ::testing::Test
 {
-public:
+protected:
     NeighborhoodSearch<GenericAgent> neighborhoodSearch{2};
     std::unique_ptr<CollisionGeometry> collisionGeometry{};
 
@@ -32,7 +32,7 @@ TEST_F(StagesTests, NotifiableWaitingSetTargetIsCorrect)
         GenericAgent agent(
             GenericAgent::ID::Invalid,
             Journey::ID::Invalid,
-            waitingSet.Id(),
+            waitingSet.GetID(),
             waitingPoints[i],
             {},
             CollisionFreeSpeedModelData{});
@@ -49,7 +49,7 @@ TEST_F(StagesTests, NotifiableWaitingSetTargetIsCorrect)
         GenericAgent agentToLastWaitingSetPos(
             GenericAgent::ID::Invalid,
             Journey::ID::Invalid,
-            waitingSet.Id(),
+            waitingSet.GetID(),
             {},
             {},
             CollisionFreeSpeedModelData{});

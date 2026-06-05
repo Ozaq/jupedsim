@@ -60,7 +60,7 @@ private:
      *
      * @return Point
      */
-    Point ForceDriv(
+    Point forceDriv(
         const GenericAgent& ped,
         Point target,
         double mass,
@@ -76,7 +76,7 @@ private:
      *
      * @return Point
      */
-    Point ForceRepPed(const GenericAgent& ped1, const GenericAgent& ped2) const;
+    Point forceRepPed(const GenericAgent& ped1, const GenericAgent& ped2) const;
     /**
      * Repulsive force acting on pedestrian <ped> from the walls in
      * <subroom>. The sum of all repulsive forces of the walls in <subroom> is calculated
@@ -86,10 +86,10 @@ private:
      *
      * @return
      */
-    Point ForceRepRoom(const GenericAgent& ped, const CollisionGeometry& geometry) const;
-    Point ForceRepWall(const GenericAgent& ped, const LineSegment& l) const;
-    Point ForceRepStatPoint(const GenericAgent& ped, const Point& p, double l, double vn) const;
-    Point ForceInterpolation(
+    Point forceRepRoom(const GenericAgent& ped, const CollisionGeometry& geometry) const;
+    Point forceRepWall(const GenericAgent& ped, const LineSegment& l) const;
+    Point forceRepStatPoint(const GenericAgent& ped, const Point& p, double l, double vn) const;
+    Point forceInterpolation(
         double v0,
         double K_ij,
         const Point& e,
@@ -97,5 +97,5 @@ private:
         double d,
         double r,
         double l) const;
-    double AgentToAgentSpacing(const GenericAgent& agent, const GenericAgent& otherAgent) const;
+    double agentToAgentSpacing(const GenericAgent& agent, const GenericAgent& otherAgent) const;
 };

@@ -20,20 +20,20 @@ class BaseStage;
 
 struct GenericAgent {
     using ID = jps::UniqueID<GenericAgent>;
-    ID id{};
+    ID AgentID{};
 
-    jps::UniqueID<Journey> journeyId{jps::UniqueID<Journey>::Invalid};
-    jps::UniqueID<BaseStage> stageId{jps::UniqueID<BaseStage>::Invalid};
+    jps::UniqueID<Journey> JourneyID{jps::UniqueID<Journey>::Invalid};
+    jps::UniqueID<BaseStage> StageID{jps::UniqueID<BaseStage>::Invalid};
 
     // This is evaluated by the "operational level"
-    Point destination{};
-    Point target{};
+    Point Destination{};
+    Point Target{};
 
     // Agent fields common for all models
-    Point pos{};
-    Point orientation{};
+    Point Pos{};
+    Point Orientation{};
 
-    using Model = std::variant<
+    using ModelData = std::variant<
         GeneralizedCentrifugalForceModelData,
         CollisionFreeSpeedModelData,
         CollisionFreeSpeedModelV2Data,
@@ -41,7 +41,7 @@ struct GenericAgent {
         AnticipationVelocityModelData,
         SocialForceModelData,
         WarpDriverModelData>;
-    Model model{};
+    ModelData Model{};
 
     GenericAgent(
         ID id_,
@@ -49,14 +49,14 @@ struct GenericAgent {
         jps::UniqueID<BaseStage> stageId_,
         Point pos_,
         Point orientation_,
-        Model model_)
-        : id(id_ != ID::Invalid ? id_ : ID{})
-        , journeyId(journeyId_)
-        , stageId(stageId_)
-        , target(pos_)
-        , pos(pos_)
-        , orientation(orientation_)
-        , model(std::move(model_))
+        ModelData model_)
+        : AgentID(id_ != ID::Invalid ? id_ : ID{})
+        , JourneyID(journeyId_)
+        , StageID(stageId_)
+        , Target(pos_)
+        , Pos(pos_)
+        , Orientation(orientation_)
+        , Model(std::move(model_))
     {
     }
 };
@@ -73,15 +73,15 @@ struct fmt::formatter<GenericAgent> {
                     ctx.out(),
                     "Agent[id={}, journey={}, stage={}, destination={}, waypoint={}, pos={}, "
                     "orientation={}, model={})",
-                    agent.id,
-                    agent.journeyId,
-                    agent.stageId,
-                    agent.destination,
-                    agent.target,
-                    agent.pos,
-                    agent.orientation,
+                    agent.AgentID,
+                    agent.JourneyID,
+                    agent.StageID,
+                    agent.Destination,
+                    agent.Target,
+                    agent.Pos,
+                    agent.Orientation,
                     m);
             },
-            agent.model);
+            agent.Model);
     }
 };

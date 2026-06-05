@@ -8,8 +8,8 @@
 class LineSegment
 {
 public:
-    Point p1{};
-    Point p2{};
+    Point P1{};
+    Point P2{};
 
     LineSegment() = default;
 
@@ -57,6 +57,6 @@ struct fmt::formatter<LineSegment> {
     template <typename FormatContext>
     auto format(const LineSegment& ls, FormatContext& ctx) const
     {
-        return fmt::format_to(ctx.out(), "LineSegment({}, {})", ls.p1, ls.p2);
+        return fmt::format_to(ctx.out(), "LineSegment({}, {})", ls.P1, ls.P2);
     }
 };

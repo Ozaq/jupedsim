@@ -10,8 +10,8 @@
 
 template <typename T>
 struct ValueWithPos {
-    Point pos{};
-    T val;
+    Point Pos{};
+    T Val;
 };
 
 TEST(NeighborhoodSearch, ReturnsEmptyOnEmpty)
@@ -34,7 +34,7 @@ TEST(NeighborhoodSearch, ReturnsOneValueInRange)
         std::begin(result),
         std::end(result),
         std::inserter(actual, std::begin(actual)),
-        [](const auto& v) { return v.val; });
+        [](const auto& v) { return v.Val; });
     ASSERT_EQ(actual, expected);
 }
 
@@ -51,7 +51,7 @@ TEST(NeighborhoodSearch, ReturnsMultipleValuesInRange)
         std::begin(result),
         std::end(result),
         std::inserter(actual, std::begin(actual)),
-        [](const auto& v) { return v.val; });
+        [](const auto& v) { return v.Val; });
     ASSERT_EQ(actual, expected);
 }
 
@@ -68,7 +68,7 @@ TEST(NeighborhoodSearch, ReturnsValuesFromDifferentInternalGridCells)
         std::begin(result),
         std::end(result),
         std::inserter(actual, std::begin(actual)),
-        [](const auto& v) { return v.val; });
+        [](const auto& v) { return v.Val; });
     ASSERT_EQ(actual, expected);
 }
 
@@ -86,7 +86,7 @@ TEST(NeighborhoodSearch, RejectesValuesInGridCellsTooFarAway)
         std::begin(result),
         std::end(result),
         std::inserter(actual, std::begin(actual)),
-        [](const auto& v) { return v.val; });
+        [](const auto& v) { return v.Val; });
     ASSERT_EQ(actual, expected);
 }
 
@@ -103,7 +103,7 @@ TEST(NeighborhoodSearch, RejectsValuesFromSelectedGridThatareTooFarAway)
         std::begin(result),
         std::end(result),
         std::inserter(actual, std::begin(actual)),
-        [](const auto& v) { return v.val; });
+        [](const auto& v) { return v.Val; });
     ASSERT_EQ(actual, expected);
 }
 
@@ -120,6 +120,6 @@ TEST(NeighborhoodSearch, ReturnsValueExactlyDistanceAwayFromQueryPoint)
         std::begin(result),
         std::end(result),
         std::inserter(actual, std::begin(actual)),
-        [](const auto& v) { return v.val; });
+        [](const auto& v) { return v.Val; });
     ASSERT_EQ(actual, expected);
 }

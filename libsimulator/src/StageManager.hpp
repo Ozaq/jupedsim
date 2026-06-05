@@ -33,26 +33,26 @@ public:
         std::unique_ptr<BaseStage> stage = std::visit(
             overloaded{
                 [](const WaypointDescription& d) -> std::unique_ptr<BaseStage> {
-                    return std::make_unique<Waypoint>(d.position, d.distance);
+                    return std::make_unique<Waypoint>(d.Position, d.Distance);
                 },
                 [&removedAgentsInLastIteration](
                     const ExitDescription& d) -> std::unique_ptr<BaseStage> {
-                    return std::make_unique<Exit>(d.polygon, removedAgentsInLastIteration);
+                    return std::make_unique<Exit>(d.Area, removedAgentsInLastIteration);
                 },
                 [](const NotifiableWaitingSetDescription& d) -> std::unique_ptr<BaseStage> {
-                    return std::make_unique<NotifiableWaitingSet>(d.slots);
+                    return std::make_unique<NotifiableWaitingSet>(d.Slots);
                 },
                 [](const NotifiableQueueDescription& d) -> std::unique_ptr<BaseStage> {
-                    return std::make_unique<NotifiableQueue>(d.slots);
+                    return std::make_unique<NotifiableQueue>(d.Slots);
                 },
                 [](const DirectSteeringDescription&) -> std::unique_ptr<BaseStage> {
                     return std::make_unique<DirectSteering>();
                 }},
             stageDescription);
-        if(stages.find(stage->Id()) != stages.end()) {
+        if(stages.find(stage->GetID()) != stages.end()) {
             throw SimulationError("Internal error, stage id already in use.");
         }
-        const auto id = stage->Id();
+        const auto id = stage->GetID();
         stages.emplace(id, std::move(stage));
 
         return id;
@@ -71,7 +71,7 @@ public:
     {
         const auto iter = stages.find(stageId);
         if(iter == std::end(stages)) {
-            throw SimulationError("Unknown stage id ({}) provided in journey.", stageId.getID());
+            throw SimulationError("Unknown stage id ({}) provided in journey.", stageId.GetID());
         }
         return iter->second.get();
     }
@@ -80,7 +80,7 @@ public:
     {
         auto iter = stages.find(stageId);
         if(iter == std::end(stages)) {
-            throw SimulationError("Unknown stage id ({}) provided in journey.", stageId.getID());
+            throw SimulationError("Unknown stage id ({}) provided in journey.", stageId.GetID());
         }
         return iter->second.get();
     }

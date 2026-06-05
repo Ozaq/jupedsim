@@ -2,6 +2,6 @@
 #include "Point.hpp"
 
 struct SocialForceModelUpdate {
-    Point position{};
-    Point velocity{};
+    Point Position{};
+    Point Velocity{};
 };

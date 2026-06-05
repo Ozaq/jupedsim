@@ -3,7 +3,7 @@
 #include "Point.hpp"
 
 struct AnticipationVelocityModelUpdate {
-    Point position{};
-    Point velocity{};
-    Point orientation{};
+    Point Position{};
+    Point Velocity{};
+    Point Orientation{};
 };

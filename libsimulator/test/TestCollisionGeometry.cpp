@@ -8,9 +8,9 @@
 #include <gtest/gtest.h>
 
 struct CellAdjacencyTestData {
-    Cell c;
-    Cell neighbor;
-    bool expected;
+    Cell C;
+    Cell Neighbor;
+    bool Expected;
 };
 
 class CellAdjacencyTest : public ::testing::TestWithParam<CellAdjacencyTestData>
@@ -69,7 +69,7 @@ class CellsFromLSTest : public ::testing::TestWithParam<std::tuple<LineSegment, 
 TEST_P(CellsFromLSTest, All)
 {
     const auto [input, expected] = GetParam();
-    const LineSegment reverseInput{input.p2, input.p1};
+    const LineSegment reverseInput{input.P2, input.P1};
     EXPECT_EQ(expected, cellsFromLineSegment(input));
     EXPECT_EQ(expected, cellsFromLineSegment(reverseInput));
 }
@@ -146,7 +146,7 @@ PolyWithHoles constructPolyFromPoints(const std::vector<Point>& points)
     cgalPoints.reserve(points.size());
     std::transform(
         std::begin(points), std::end(points), std::back_inserter(cgalPoints), [](const auto& p) {
-            return CGALPoint{p.x, p.y};
+            return CGALPoint{p.X, p.Y};
         });
     return PolyWithHoles(Poly{cgalPoints.begin(), cgalPoints.end()});
 }
@@ -237,15 +237,15 @@ TEST_F(LongDiagonalRectangle, CellsAtBottomLeft)
 
     const auto middleCell = Cell{-12, -16};
     const std::vector<Cell> candidates = {
-        {middleCell.x - CELL_EXTEND, middleCell.y - CELL_EXTEND},
-        {middleCell.x - CELL_EXTEND, middleCell.y},
-        {middleCell.x - CELL_EXTEND, middleCell.y + CELL_EXTEND},
-        {middleCell.x, middleCell.y - CELL_EXTEND},
-        {middleCell.x, middleCell.y},
-        {middleCell.x, middleCell.y + CELL_EXTEND},
-        {middleCell.x + CELL_EXTEND, middleCell.y - CELL_EXTEND},
-        {middleCell.x + CELL_EXTEND, middleCell.y},
-        {middleCell.x + CELL_EXTEND, middleCell.y + CELL_EXTEND}};
+        {middleCell.X - CELL_EXTEND, middleCell.Y - CELL_EXTEND},
+        {middleCell.X - CELL_EXTEND, middleCell.Y},
+        {middleCell.X - CELL_EXTEND, middleCell.Y + CELL_EXTEND},
+        {middleCell.X, middleCell.Y - CELL_EXTEND},
+        {middleCell.X, middleCell.Y},
+        {middleCell.X, middleCell.Y + CELL_EXTEND},
+        {middleCell.X + CELL_EXTEND, middleCell.Y - CELL_EXTEND},
+        {middleCell.X + CELL_EXTEND, middleCell.Y},
+        {middleCell.X + CELL_EXTEND, middleCell.Y + CELL_EXTEND}};
 
     for(const auto& point : candidates) {
         const auto result = collisionGeometry.LineSegmentsInApproxDistanceTo(point);
@@ -262,15 +262,15 @@ TEST_F(LongDiagonalRectangle, CellsAtTopRight)
 
     const auto middleCell = Cell{4, 8};
     const std::vector<Cell> candidates = {
-        {middleCell.x - CELL_EXTEND, middleCell.y - CELL_EXTEND},
-        {middleCell.x - CELL_EXTEND, middleCell.y},
-        {middleCell.x - CELL_EXTEND, middleCell.y + CELL_EXTEND},
-        {middleCell.x, middleCell.y - CELL_EXTEND},
-        {middleCell.x, middleCell.y},
-        {middleCell.x, middleCell.y + CELL_EXTEND},
-        {middleCell.x + CELL_EXTEND, middleCell.y - CELL_EXTEND},
-        {middleCell.x + CELL_EXTEND, middleCell.y},
-        {middleCell.x + CELL_EXTEND, middleCell.y + CELL_EXTEND}};
+        {middleCell.X - CELL_EXTEND, middleCell.Y - CELL_EXTEND},
+        {middleCell.X - CELL_EXTEND, middleCell.Y},
+        {middleCell.X - CELL_EXTEND, middleCell.Y + CELL_EXTEND},
+        {middleCell.X, middleCell.Y - CELL_EXTEND},
+        {middleCell.X, middleCell.Y},
+        {middleCell.X, middleCell.Y + CELL_EXTEND},
+        {middleCell.X + CELL_EXTEND, middleCell.Y - CELL_EXTEND},
+        {middleCell.X + CELL_EXTEND, middleCell.Y},
+        {middleCell.X + CELL_EXTEND, middleCell.Y + CELL_EXTEND}};
 
     for(const auto& point : candidates) {
         const auto result = collisionGeometry.LineSegmentsInApproxDistanceTo(point);

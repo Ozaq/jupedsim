@@ -8,7 +8,7 @@
 
 std::tuple<double, double> intoTuple(const Point& p)
 {
-    return std::make_tuple(p.x, p.y);
+    return std::make_tuple(p.X, p.Y);
 }
 
 Point intoPoint(const std::tuple<double, double>& p)

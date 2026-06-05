@@ -16,9 +16,9 @@ TEST(UniqueId, CanBeConstructedFromUnderlyingType)
     const jps::UniqueID<void> b{667};
     const jps::UniqueID<void> second_sentinel{};
     ASSERT_NE(a, b);
-    ASSERT_EQ(a.getID(), 666);
-    ASSERT_EQ(b.getID(), 667);
-    ASSERT_EQ(first_sentinel.getID() + 1, second_sentinel.getID());
+    ASSERT_EQ(a.GetID(), 666);
+    ASSERT_EQ(b.GetID(), 667);
+    ASSERT_EQ(first_sentinel.GetID() + 1, second_sentinel.GetID());
 }
 
 TEST(UniqueId, DefaultConstructedIDsAreNotIdentical)

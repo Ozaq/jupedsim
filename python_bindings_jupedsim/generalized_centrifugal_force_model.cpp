@@ -46,11 +46,11 @@ void init_generalized_centrifugal_force_model(py::module_& m)
                         double bmin,
                         double bmax) {
                 return GeneralizedCentrifugalForceModelData{
-                    .speed = speed,
-                    .e0 = intoPoint(desiredOrientation),
-                    .mass = mass,
-                    .tau = tau,
-                    .v0 = desiredSpeed,
+                    .Speed = speed,
+                    .E0 = intoPoint(desiredOrientation),
+                    .Mass = mass,
+                    .Tau = tau,
+                    .V0 = desiredSpeed,
                     .Av = av,
                     .AMin = amin,
                     .BMin = bmin,
@@ -66,17 +66,17 @@ void init_generalized_centrifugal_force_model(py::module_& m)
             py::arg("a_min"),
             py::arg("b_min"),
             py::arg("b_max"))
-        .def_readwrite("speed", &GeneralizedCentrifugalForceModelData::speed)
+        .def_readwrite("speed", &GeneralizedCentrifugalForceModelData::Speed)
         .def_property(
             "desired_direction",
-            [](const GeneralizedCentrifugalForceModelData& obj) { return intoTuple(obj.e0); },
+            [](const GeneralizedCentrifugalForceModelData& obj) { return intoTuple(obj.E0); },
             [](GeneralizedCentrifugalForceModelData& obj, std::tuple<double, double> pt) {
-                obj.e0 = intoPoint(pt);
+                obj.E0 = intoPoint(pt);
             })
-        .def_readwrite("orientation_delay", &GeneralizedCentrifugalForceModelData::orientationDelay)
-        .def_readwrite("mass", &GeneralizedCentrifugalForceModelData::mass)
-        .def_readwrite("tau", &GeneralizedCentrifugalForceModelData::tau)
-        .def_readwrite("desired_speed", &GeneralizedCentrifugalForceModelData::v0)
+        .def_readwrite("orientation_delay", &GeneralizedCentrifugalForceModelData::OrientationDelay)
+        .def_readwrite("mass", &GeneralizedCentrifugalForceModelData::Mass)
+        .def_readwrite("tau", &GeneralizedCentrifugalForceModelData::Tau)
+        .def_readwrite("desired_speed", &GeneralizedCentrifugalForceModelData::V0)
         .def_readwrite("a_v", &GeneralizedCentrifugalForceModelData::Av)
         .def_readwrite("a_min", &GeneralizedCentrifugalForceModelData::AMin)
         .def_readwrite("b_min", &GeneralizedCentrifugalForceModelData::BMin)

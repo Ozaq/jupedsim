@@ -25,10 +25,10 @@ class DistanceQueryIterator
 {
 private:
     using BackingIterator = typename std::vector<T>::const_iterator;
-    double _distance;
-    Point _p;
-    BackingIterator _current;
-    BackingIterator _end;
+    double distance;
+    Point p;
+    BackingIterator current;
+    BackingIterator end;
 
 public:
     using iterator_category = std::input_iterator_tag;
@@ -37,37 +37,37 @@ public:
     using pointer = T*;
     using reference = T&;
     DistanceQueryIterator(double distance, Point p, BackingIterator current, BackingIterator end)
-        : _distance(distance)
-        , _p(p)
-        , _current(
+        : distance(distance)
+        , p(p)
+        , current(
               std::find_if(
                   current,
                   end,
-                  [this](const auto& t) { return dist(t, _p) <= _distance; }))
-        , _end(end)
+                  [this](const auto& t) { return dist(t, this->p) <= this->distance; }))
+        , end(end)
     {
     }
     ~DistanceQueryIterator() = default;
     DistanceQueryIterator(const DistanceQueryIterator& other) = default;
     DistanceQueryIterator& operator=(const DistanceQueryIterator& other) = default;
 
-    bool operator==(const DistanceQueryIterator& other) const { return _current == other._current; }
+    bool operator==(const DistanceQueryIterator& other) const { return current == other.current; }
 
     bool operator!=(const DistanceQueryIterator& other) const { return !(*this == other); }
 
     DistanceQueryIterator& operator++()
     {
         do {
-            ++_current;
-        } while(_current != _end && dist(*_current, _p) > _distance);
+            ++current;
+        } while(current != end && dist(*current, p) > distance);
         return *this;
     }
 
-    const T& operator*() const { return *_current; }
+    const T& operator*() const { return *current; }
 };
 
 /// Encodes a cell in the geometry grid.
-/// Cells are defined on the intervalls [min.x, min.x + extend), [min.y, min.y + extend)
+/// Cells are defined on the intervalls [min.X, min.X + extend), [min.Y, min.Y + extend)
 const int CELL_EXTEND = 4;
 using Cell = Point;
 
@@ -85,7 +85,7 @@ struct std::hash<Cell> {
     std::size_t operator()(const Point& pos) const noexcept
     {
         std::hash<double> hasher{};
-        return jps::hash_combine(hasher(pos.x), hasher(pos.y));
+        return jps::hash_combine(hasher(pos.X), hasher(pos.Y));
     }
 };
 
@@ -98,12 +98,12 @@ public:
     using ID = jps::UniqueID<CollisionGeometry>;
 
 private:
-    ID _id{};
-    PolyWithHoles _accessibleAreaPolygon;
-    std::vector<LineSegment> _segments;
-    std::unordered_map<Cell, std::set<LineSegment>> _grid{};
-    std::unordered_map<Cell, std::vector<LineSegment>> _approximateGrid{};
-    std::tuple<std::vector<Point>, std::vector<std::vector<Point>>> _accessibleArea{};
+    ID id{};
+    PolyWithHoles accessibleAreaPolygon;
+    std::vector<LineSegment> segments;
+    std::unordered_map<Cell, std::set<LineSegment>> grid{};
+    std::unordered_map<Cell, std::vector<LineSegment>> approximateGrid{};
+    std::tuple<std::vector<Point>, std::vector<std::vector<Point>>> accessibleArea{};
 
 public:
     using LineSegmentRange = IteratorPair<DistanceQueryIterator<LineSegment>>;
@@ -138,9 +138,9 @@ public:
 
     const std::tuple<std::vector<Point>, std::vector<std::vector<Point>>>& AccessibleArea() const;
 
-    const PolyWithHoles& Polygon() const { return _accessibleAreaPolygon; }
+    const PolyWithHoles& Polygon() const { return accessibleAreaPolygon; }
 
-    ID Id() const { return _id; }
+    ID GetID() const { return id; }
 
 private:
     void insertIntoApproximateGrid(const LineSegment& ls);

@@ -21,7 +21,7 @@ void init_agent(py::module_& m)
                         uint64_t stageId,
                         std::tuple<double, double> position,
                         std::tuple<double, double> orientation,
-                        GenericAgent::Model model) {
+                        GenericAgent::ModelData model) {
                 return GenericAgent(
                     GenericAgent::ID::Invalid,
                     journeyId,
@@ -36,23 +36,23 @@ void init_agent(py::module_& m)
             py::arg("position"),
             py::arg("orientation"),
             py::arg("model"))
-        .def_property_readonly("id", [](const GenericAgent& agent) { return agent.id.getID(); })
+        .def_property_readonly("id", [](const GenericAgent& agent) { return agent.AgentID.GetID(); })
         .def_property_readonly(
-            "journey_id", [](const GenericAgent& agent) { return agent.journeyId.getID(); })
+            "journey_id", [](const GenericAgent& agent) { return agent.JourneyID.GetID(); })
         .def_property_readonly(
-            "stage_id", [](const GenericAgent& agent) { return agent.stageId.getID(); })
+            "stage_id", [](const GenericAgent& agent) { return agent.StageID.GetID(); })
         .def_property_readonly(
-            "position", [](const GenericAgent& agent) { return intoTuple(agent.pos); })
+            "position", [](const GenericAgent& agent) { return intoTuple(agent.Pos); })
         .def_property_readonly(
-            "orientation", [](const GenericAgent& agent) { return intoTuple(agent.orientation); })
+            "orientation", [](const GenericAgent& agent) { return intoTuple(agent.Orientation); })
         .def_property(
             "target",
-            [](const GenericAgent& agent) { return intoTuple(agent.target); },
+            [](const GenericAgent& agent) { return intoTuple(agent.Target); },
             [](GenericAgent& agent, std::tuple<double, double> target) {
-                agent.target = intoPoint(target);
+                agent.Target = intoPoint(target);
             })
         .def_property_readonly(
             "model",
-            [](GenericAgent& agent) -> auto& { return agent.model; },
+            [](GenericAgent& agent) -> auto& { return agent.Model; },
             py::return_value_policy::reference);
 }

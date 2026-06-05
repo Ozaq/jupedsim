@@ -9,10 +9,10 @@
 #include <limits>
 
 struct AABB {
-    double xmin{std::numeric_limits<double>::max()};
-    double xmax{std::numeric_limits<double>::lowest()};
-    double ymin{std::numeric_limits<double>::max()};
-    double ymax{std::numeric_limits<double>::lowest()};
+    double XMin{std::numeric_limits<double>::max()};
+    double XMax{std::numeric_limits<double>::lowest()};
+    double YMin{std::numeric_limits<double>::max()};
+    double YMax{std::numeric_limits<double>::lowest()};
 
     AABB() = default;
 
@@ -23,32 +23,32 @@ struct AABB {
             throw SimulationError("Cannot create a AABB from zero points");
         }
         for(const auto [x, y] : container) {
-            xmin = std::min(x, xmin);
-            xmax = std::max(x, xmax);
-            ymin = std::min(y, ymin);
-            ymax = std::max(y, ymax);
+            XMin = std::min(x, XMin);
+            XMax = std::max(x, XMax);
+            YMin = std::min(y, YMin);
+            YMax = std::max(y, YMax);
         };
     }
 
     AABB(const Point a, const Point b)
     {
-        xmin = std::min(b.x, std::min(a.x, xmin));
-        xmax = std::max(b.x, std::max(a.x, xmax));
-        ymin = std::min(b.y, std::min(a.y, ymin));
-        ymax = std::max(b.y, std::max(a.y, ymax));
+        XMin = std::min(b.X, std::min(a.X, XMin));
+        XMax = std::max(b.X, std::max(a.X, XMax));
+        YMin = std::min(b.Y, std::min(a.Y, YMin));
+        YMax = std::max(b.Y, std::max(a.Y, YMax));
     }
 
-    bool Inside(Point p) const { return p.x >= xmin && p.x <= xmax && p.y >= ymin && p.y <= ymax; }
+    bool Inside(Point p) const { return p.X >= XMin && p.X <= XMax && p.Y >= YMin && p.Y <= YMax; }
 
     bool Overlap(const AABB& other) const
     {
-        return !(xmax < other.xmin || xmin > other.xmax || ymax < other.ymin || ymin > other.ymax);
+        return !(XMax < other.XMin || XMin > other.XMax || YMax < other.YMin || YMin > other.YMax);
     };
 
     bool Intersects(const LineSegment& lineSegment) const;
 
-    Point TopLeft() const { return Point{xmin, ymax}; };
-    Point TopRight() const { return Point{xmax, ymax}; };
-    Point BottomLeft() const { return Point{xmin, ymin}; };
-    Point BottomRight() const { return Point{xmax, ymin}; };
+    Point TopLeft() const { return Point{XMin, YMax}; };
+    Point TopRight() const { return Point{XMax, YMax}; };
+    Point BottomLeft() const { return Point{XMin, YMin}; };
+    Point BottomRight() const { return Point{XMax, YMin}; };
 };

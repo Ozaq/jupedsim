@@ -27,13 +27,13 @@ void init_collision_free_speed_model(py::module_& m)
         .def(
             py::init([](double timeGap, double desiredSpeed, double radius) {
                 return CollisionFreeSpeedModelData{
-                    .timeGap = timeGap, .v0 = desiredSpeed, .radius = radius};
+                    .TimeGap = timeGap, .V0 = desiredSpeed, .Radius = radius};
             }),
             py::kw_only(),
             py::arg("time_gap"),
             py::arg("desired_speed"),
             py::arg("radius"))
-        .def_readwrite("time_gap", &CollisionFreeSpeedModelData::timeGap)
-        .def_readwrite("desired_speed", &CollisionFreeSpeedModelData::v0)
-        .def_readwrite("radius", &CollisionFreeSpeedModelData::radius);
+        .def_readwrite("time_gap", &CollisionFreeSpeedModelData::TimeGap)
+        .def_readwrite("desired_speed", &CollisionFreeSpeedModelData::V0)
+        .def_readwrite("radius", &CollisionFreeSpeedModelData::Radius);
 }

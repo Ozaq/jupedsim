@@ -18,7 +18,7 @@ public:
     using NeighborhoodSearchType = NeighborhoodSearch<GenericAgent>;
 
 private:
-    double _cutOffRadius{3};
+    double cutOffRadius{3};
     double strengthNeighborRepulsion;
     double rangeNeighborRepulsion;
     double strengthGeometryRepulsion;
@@ -45,9 +45,9 @@ public:
     std::unique_ptr<OperationalModel> Clone() const override;
 
 private:
-    double OptimalSpeed(const GenericAgent& ped, double spacing, double time_gap) const;
+    double optimalSpeed(const GenericAgent& ped, double spacing, double time_gap) const;
     double
-    GetSpacing(const GenericAgent& ped1, const GenericAgent& ped2, const Point& direction) const;
-    Point NeighborRepulsion(const GenericAgent& ped1, const GenericAgent& ped2) const;
-    Point BoundaryRepulsion(const GenericAgent& ped, const LineSegment& boundary_segment) const;
+    getSpacing(const GenericAgent& ped1, const GenericAgent& ped2, const Point& direction) const;
+    Point neighborRepulsion(const GenericAgent& ped1, const GenericAgent& ped2) const;
+    Point boundaryRepulsion(const GenericAgent& ped, const LineSegment& boundary_segment) const;
 };

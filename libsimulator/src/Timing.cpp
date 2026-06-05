@@ -12,93 +12,93 @@
 namespace cr = std::chrono;
 
 TimerEntry::TimerEntry(TimerEntry&& other) noexcept
-    : started_at(std::move(other.started_at))
-    , duration_in_microseconds(other.duration_in_microseconds)
+    : startedAt(std::move(other.startedAt))
+    , durationInMicroseconds(other.durationInMicroseconds)
     , running(other.running)
 {
-    other.duration_in_microseconds = 0;
+    other.durationInMicroseconds = 0;
     other.running = false;
 }
 
 TimerEntry& TimerEntry::operator=(TimerEntry&& other) noexcept
 {
     if(this != &other) {
-        started_at = std::move(other.started_at);
-        duration_in_microseconds = other.duration_in_microseconds;
+        startedAt = std::move(other.startedAt);
+        durationInMicroseconds = other.durationInMicroseconds;
         running = other.running;
-        other.duration_in_microseconds = 0;
+        other.durationInMicroseconds = 0;
         other.running = false;
     }
     return *this;
 }
 
-void TimerEntry::start()
+void TimerEntry::Start()
 {
     if(!running) {
         running = true;
-        started_at = cr::high_resolution_clock::now();
+        startedAt = cr::high_resolution_clock::now();
     }
 }
 
-void TimerEntry::stop()
+void TimerEntry::Stop()
 {
     if(running) {
         running = false;
-        duration_in_microseconds += std::chrono::duration_cast<std::chrono::microseconds>(
-                                        std::chrono::high_resolution_clock::now() - started_at)
+        durationInMicroseconds += std::chrono::duration_cast<std::chrono::microseconds>(
+                                        std::chrono::high_resolution_clock::now() - startedAt)
                                         .count();
     }
 }
 
-uint64_t TimerEntry::getDurationInMicroseconds() const
+uint64_t TimerEntry::GetDurationInMicroseconds() const
 {
     if(running) {
-        return duration_in_microseconds +
+        return durationInMicroseconds +
                std::chrono::duration_cast<std::chrono::microseconds>(
-                   std::chrono::high_resolution_clock::now() - started_at)
+                   std::chrono::high_resolution_clock::now() - startedAt)
                    .count();
     }
-    return duration_in_microseconds;
+    return durationInMicroseconds;
 }
 
-void Timer::pushTimerProbe(std::string_view name, int timer_probe_level)
+void Timer::PushTimerProbe(std::string_view name, int timer_probe_level)
 {
-    if(timer_probe_level > max_log_level) {
+    if(timer_probe_level > maxLogLevel) {
         return;
     }
     std::string name_str(name);
-    auto iter = timer_map.find(name_str);
+    auto iter = timerMap.find(name_str);
     // use emplace to avoid multiple lookups and unnecessary default construction of TimerEntry
-    if(iter == timer_map.end()) {
-        timer_map.emplace(name_str, TimerEntry()).first->second.start();
+    if(iter == timerMap.end()) {
+        timerMap.emplace(name_str, TimerEntry()).first->second.Start();
     } else {
-        iter->second.start();
+        iter->second.Start();
     }
 }
 
-void Timer::popTimerProbe(const std::string_view name)
+void Timer::PopTimerProbe(const std::string_view name)
 {
     // use auto iter = timer_map.find(name) to avoid multiple lookups
-    auto iter = timer_map.find(std::string(name));
-    if(iter != timer_map.end()) {
-        iter->second.stop();
+    auto iter = timerMap.find(std::string(name));
+    if(iter != timerMap.end()) {
+        iter->second.Stop();
     }
 }
 
-TimerEntry::duration_type Timer::getDuration(const std::string_view name) const
+TimerEntry::duration_type Timer::GetDuration(const std::string_view name) const
 {
-    auto iter = timer_map.find(std::string(name));
-    if(iter != timer_map.end()) {
-        return iter->second.getDurationInMicroseconds();
+    auto iter = timerMap.find(std::string(name));
+    if(iter != timerMap.end()) {
+        return iter->second.GetDurationInMicroseconds();
     }
     return 0;
 }
 
-std::map<std::string, TimerEntry::duration_type> Timer::getDurations() const
+std::map<std::string, TimerEntry::duration_type> Timer::GetDurations() const
 {
     std::map<std::string, TimerEntry::duration_type> entries;
-    for(const auto& [name, trace] : timer_map) {
-        entries.emplace(name, trace.getDurationInMicroseconds());
+    for(const auto& [name, trace] : timerMap) {
+        entries.emplace(name, trace.GetDurationInMicroseconds());
     }
     return entries;
 }

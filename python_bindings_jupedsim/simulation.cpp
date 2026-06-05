@@ -42,26 +42,26 @@ void init_simulation(py::module_& m)
         .def(
             "add_waypoint_stage",
             [](Simulation& sim, std::tuple<double, double> position, double distance) {
-                return sim.AddStage(WaypointDescription{intoPoint(position), distance}).getID();
+                return sim.AddStage(WaypointDescription{intoPoint(position), distance}).GetID();
             })
         .def(
             "add_queue_stage",
             [](Simulation& sim, const std::vector<std::tuple<double, double>>& positions) {
-                return sim.AddStage(NotifiableQueueDescription{intoPoints(positions)}).getID();
+                return sim.AddStage(NotifiableQueueDescription{intoPoints(positions)}).GetID();
             })
         .def(
             "add_waiting_set_stage",
             [](Simulation& sim, const std::vector<std::tuple<double, double>>& positions) {
-                return sim.AddStage(NotifiableWaitingSetDescription{intoPoints(positions)}).getID();
+                return sim.AddStage(NotifiableWaitingSetDescription{intoPoints(positions)}).GetID();
             })
         .def(
             "add_exit_stage",
             [](Simulation& sim, const std::vector<std::tuple<double, double>>& polygon) {
-                return sim.AddStage(ExitDescription{Polygon{intoPoints(polygon)}}).getID();
+                return sim.AddStage(ExitDescription{Polygon{intoPoints(polygon)}}).GetID();
             })
         .def(
             "add_direct_steering_stage",
-            [](Simulation& sim) { return sim.AddStage(DirectSteeringDescription{}).getID(); })
+            [](Simulation& sim) { return sim.AddStage(DirectSteeringDescription{}).GetID(); })
         .def(
             "add_journey",
             [](Simulation& sim, std::map<uint64_t, TransitionDescription>& journey) {
@@ -70,11 +70,11 @@ void init_simulation(py::module_& m)
                     native_journey.emplace(stage_id, desc);
                 }
 
-                return sim.AddJourney(native_journey).getID();
+                return sim.AddJourney(native_journey).GetID();
             })
         .def(
             "add_agent",
-            [](Simulation& sim, GenericAgent& agent) { return sim.AddAgent(agent).getID(); })
+            [](Simulation& sim, GenericAgent& agent) { return sim.AddAgent(agent).GetID(); })
         .def(
             "mark_agent_for_removal",
             [](Simulation& sim, uint64_t id) { sim.MarkAgentForRemoval(id); })
@@ -85,7 +85,7 @@ void init_simulation(py::module_& m)
                 auto agent_ids = std::vector<GenericAgent::ID::underlying_type>();
                 agent_ids.reserve(removed_agent_ids.size());
                 for(auto agent_id : removed_agent_ids) {
-                    agent_ids.emplace_back(agent_id.getID());
+                    agent_ids.emplace_back(agent_id.GetID());
                 }
                 return agent_ids;
             })
@@ -119,7 +119,7 @@ void init_simulation(py::module_& m)
                 auto agents = std::vector<uint64_t>();
                 agents.reserve(agents_in_range.size());
                 for(auto agent : agents_in_range) {
-                    agents.emplace_back(agent.getID());
+                    agents.emplace_back(agent.GetID());
                 }
                 return agents;
             })
@@ -130,7 +130,7 @@ void init_simulation(py::module_& m)
                 auto agents = std::vector<uint64_t>();
                 agents.reserve(agents_in_range.size());
                 for(auto agent : agents_in_range) {
-                    agents.emplace_back(agent.getID());
+                    agents.emplace_back(agent.GetID());
                 }
                 return agents;
             })

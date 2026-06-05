@@ -50,10 +50,10 @@ Mesh::Mesh(const CDT& cdt)
             continue;
         }
         Polygon p{};
-        p.vertices.reserve(3);
-        p.vertices.push_back(vertex_handle_to_index_map[t->vertex(0)]);
-        p.vertices.push_back(vertex_handle_to_index_map[t->vertex(1)]);
-        p.vertices.push_back(vertex_handle_to_index_map[t->vertex(2)]);
+        p.Vertices.reserve(3);
+        p.Vertices.push_back(vertex_handle_to_index_map[t->vertex(0)]);
+        p.Vertices.push_back(vertex_handle_to_index_map[t->vertex(1)]);
+        p.Vertices.push_back(vertex_handle_to_index_map[t->vertex(2)]);
 
         polygons.push_back(p);
         neighbor_face_handles.emplace_back();
@@ -74,12 +74,12 @@ Mesh::Mesh(const CDT& cdt)
     for(size_t index = 0; index < polygons.size(); ++index) {
         auto& p = polygons[index];
         const auto& neighbors = neighbor_face_handles[index];
-        p.neighbors.reserve(neighbors.size());
+        p.Neighbors.reserve(neighbors.size());
         for(const auto& opt : neighbors) {
             if(opt) {
-                p.neighbors.emplace_back(face_handle_to_index_map.at(*opt));
+                p.Neighbors.emplace_back(face_handle_to_index_map.at(*opt));
             } else {
-                p.neighbors.emplace_back(Polygon::InvalidIndex);
+                p.Neighbors.emplace_back(Polygon::InvalidIndex);
             }
         }
     }
@@ -123,17 +123,17 @@ void Mesh::mergeDeadEnds()
             };
 
             const auto num_valid_neigbors =
-                std::count_if(std::begin(p.neighbors), std::end(p.neighbors), isValidNeighbor);
+                std::count_if(std::begin(p.Neighbors), std::end(p.Neighbors), isValidNeighbor);
 
             if(num_valid_neigbors != 1) {
                 continue;
             }
 
             const auto neighbor =
-                std::find_if(std::begin(p.neighbors), std::end(p.neighbors), isValidNeighbor);
-            assert(neighbor != std::end(p.neighbors));
-            const auto valid_neighbor = std::distance(std::begin(p.neighbors), neighbor);
-            merge_candidate = p.neighbors[valid_neighbor];
+                std::find_if(std::begin(p.Neighbors), std::end(p.Neighbors), isValidNeighbor);
+            assert(neighbor != std::end(p.Neighbors));
+            const auto valid_neighbor = std::distance(std::begin(p.Neighbors), neighbor);
+            merge_candidate = p.Neighbors[valid_neighbor];
 
             merge_target = index;
 
@@ -142,8 +142,8 @@ void Mesh::mergeDeadEnds()
         }
 
         if(merged) {
-            polygons[merge_candidate].neighbors.clear();
-            polygons[merge_candidate].vertices.clear();
+            polygons[merge_candidate].Neighbors.clear();
+            polygons[merge_candidate].Vertices.clear();
             merged_polygons[merge_candidate] = true;
             for(size_t index = 0; index < polygons.size(); ++index) {
                 if(merged_polygons[index]) {
@@ -151,8 +151,8 @@ void Mesh::mergeDeadEnds()
                 }
                 auto& polygon = polygons[index];
                 std::replace(
-                    std::begin(polygon.neighbors),
-                    std::end(polygon.neighbors),
+                    std::begin(polygon.Neighbors),
+                    std::end(polygon.Neighbors),
                     merge_candidate,
                     merge_target);
             }
@@ -174,7 +174,7 @@ double Mesh::polygonArea(const std::vector<size_t> indices) const
         const auto& current_vertex = vertices[indices[index]];
         const auto& next_vertex = vertices[indices[next(index)]];
 
-        area += (current_vertex.x * next_vertex.y) - (current_vertex.y - next_vertex.x);
+        area += (current_vertex.x * next_vertex.y) - (current_vertex.y * next_vertex.x);
     }
     area = std::abs(area) / 2.0;
     return area;
@@ -186,13 +186,13 @@ void Mesh::smartMerge(bool keep_deadends = true)
 
     struct SearchNode {
 
-        size_t source;
-        double area;
+        size_t Source;
+        double Area;
 
         // Comparison.
         // Always take the "biggest" search node in a priority queue.
-        bool operator<(const SearchNode& other) const { return area < other.area; }
-        bool operator>(const SearchNode& other) const { return area > other.area; }
+        bool operator<(const SearchNode& other) const { return Area < other.Area; }
+        bool operator>(const SearchNode& other) const { return Area > other.Area; }
     };
 
     std::vector<double> bestMerge(polygons.size(), InvalidArea);
@@ -212,7 +212,7 @@ void Mesh::smartMerge(bool keep_deadends = true)
         };
 
         const auto num_valid_neigbors = std::count_if(
-            std::begin(polygon.neighbors), std::end(polygon.neighbors), isValidNeighbor);
+            std::begin(polygon.Neighbors), std::end(polygon.Neighbors), isValidNeighbor);
 
         if(keep_deadends && num_valid_neigbors == 1) {
             // It's a dead end and we don't want to merge it.
@@ -220,24 +220,24 @@ void Mesh::smartMerge(bool keep_deadends = true)
         }
 
         SearchNode thisNode{index, InvalidArea};
-        for(size_t i = 0; i < polygon.neighbors.size(); ++i) {
-            const auto& neighbor = polygon.neighbors[i];
+        for(size_t i = 0; i < polygon.Neighbors.size(); ++i) {
+            const auto& neighbor = polygon.Neighbors[i];
             if(neighbor == Polygon::InvalidIndex || neighbor == index ||
-               polygons[neighbor].neighbors.size() == 0) {
+               polygons[neighbor].Neighbors.size() == 0) {
                 continue;
             }
             const auto& valid_neighbor = i;
-            size_t mergeIndex = polygon.neighbors[valid_neighbor];
+            size_t mergeIndex = polygon.Neighbors[valid_neighbor];
 
             auto [indices, neighbors] = mergedPolygon(index, mergeIndex, valid_neighbor);
 
             if(polygonIsConvex(indices)) {
-                thisNode.area = std::max(thisNode.area, polygonArea(indices));
+                thisNode.Area = std::max(thisNode.Area, polygonArea(indices));
             }
         }
-        if(thisNode.area != InvalidArea) {
+        if(thisNode.Area != InvalidArea) {
             polygonQueue.push(thisNode);
-            bestMerge[index] = thisNode.area;
+            bestMerge[index] = thisNode.Area;
 
         } else {
             bestMerge[index] = InvalidArea;
@@ -255,25 +255,25 @@ void Mesh::smartMerge(bool keep_deadends = true)
         const auto node = polygonQueue.top();
         polygonQueue.pop();
 
-        if(abs(node.area - bestMerge[node.source]) > 1e-8) {
+        if(abs(node.Area - bestMerge[node.Source]) > 1e-8) {
             // Not the right node.
             continue;
         }
 
-        const auto& polygon = polygons[node.source];
+        const auto& polygon = polygons[node.Source];
 
-        for(size_t i = 0; i < polygon.neighbors.size(); ++i) {
-            const auto& neighbor = polygon.neighbors[i];
-            if(neighbor == Polygon::InvalidIndex || neighbor == node.source ||
-               polygons[neighbor].vertices.size() == 0) {
+        for(size_t i = 0; i < polygon.Neighbors.size(); ++i) {
+            const auto& neighbor = polygon.Neighbors[i];
+            if(neighbor == Polygon::InvalidIndex || neighbor == node.Source ||
+               polygons[neighbor].Vertices.size() == 0) {
                 continue;
             }
-            size_t mergeIndex = polygon.neighbors[i];
+            size_t mergeIndex = polygon.Neighbors[i];
 
-            auto [indices, neighbors] = mergedPolygon(node.source, mergeIndex, i);
+            auto [indices, neighbors] = mergedPolygon(node.Source, mergeIndex, i);
             if(polygonIsConvex(indices)) {
                 auto area = polygonArea(indices);
-                if(std::abs(node.area - area) < 1e-8) {
+                if(std::abs(node.Area - area) < 1e-8) {
                     mergePartner = mergeIndex;
                     firstCommonVertex = i;
                     break;
@@ -283,30 +283,30 @@ void Mesh::smartMerge(bool keep_deadends = true)
         assert(mergePartner != Polygon::InvalidIndex);
         assert(firstCommonVertex != Polygon::InvalidIndex);
 
-        auto mergeSuccess = tryMerge(node.source, mergePartner, firstCommonVertex);
+        auto mergeSuccess = tryMerge(node.Source, mergePartner, firstCommonVertex);
         if(!mergeSuccess) {
             continue;
         }
 
         assert(mergeSuccess);
         bestMerge[mergePartner] = InvalidArea;
-        polygons[mergePartner].neighbors.clear();
-        polygons[mergePartner].vertices.clear();
+        polygons[mergePartner].Neighbors.clear();
+        polygons[mergePartner].Vertices.clear();
         for(size_t index = 0; index < polygons.size(); ++index) {
             auto& polygon = polygons[index];
             std::replace(
-                std::begin(polygon.neighbors),
-                std::end(polygon.neighbors),
+                std::begin(polygon.Neighbors),
+                std::end(polygon.Neighbors),
                 mergePartner,
-                node.source);
+                node.Source);
         }
 
         // Update THIS merge
-        rateMerge(node.source);
+        rateMerge(node.Source);
 
         // Update the polygons around this merge.
-        for(size_t i = 0; i < polygon.neighbors.size(); ++i) {
-            rateMerge(polygon.neighbors[i]);
+        for(size_t i = 0; i < polygon.Neighbors.size(); ++i) {
+            rateMerge(polygon.Neighbors[i]);
         }
     }
 }
@@ -325,7 +325,7 @@ bool Mesh::isMergable(
 bool Mesh::isValid() const
 {
     for(const auto& p : polygons) {
-        if(!polygonIsConvex(p.vertices)) {
+        if(!polygonIsConvex(p.Vertices)) {
             return false;
         }
     }
@@ -367,7 +367,7 @@ Mesh::mergedPolygon(size_t polygon_a_index, size_t polygon_b_index, size_t first
 {
     auto& polygon_a = polygons[polygon_a_index];
     const auto& polygon_b = polygons[polygon_b_index];
-    const auto new_vertex_count = polygon_a.vertices.size() + polygon_b.vertices.size() - 2;
+    const auto new_vertex_count = polygon_a.Vertices.size() + polygon_b.Vertices.size() - 2;
 
     std::vector<size_t> indices{};
     indices.reserve(new_vertex_count);
@@ -375,23 +375,23 @@ Mesh::mergedPolygon(size_t polygon_a_index, size_t polygon_b_index, size_t first
     neighbors.reserve(new_vertex_count);
 
     const auto iter_b = std::find(
-        std::begin(polygon_b.vertices),
-        std::end(polygon_b.vertices),
-        polygon_a.vertices[first_common_vertex_in_a]);
-    assert(iter_b != std::end(polygon_b.vertices));
-    const auto vertex_in_b = std::distance(std::begin(polygon_b.vertices), iter_b);
+        std::begin(polygon_b.Vertices),
+        std::end(polygon_b.Vertices),
+        polygon_a.Vertices[first_common_vertex_in_a]);
+    assert(iter_b != std::end(polygon_b.Vertices));
+    const auto vertex_in_b = std::distance(std::begin(polygon_b.Vertices), iter_b);
 
-    for(size_t index = 0; index < polygon_b.vertices.size() - 1; ++index) {
-        indices.emplace_back(polygon_b.vertices[(index + vertex_in_b) % polygon_b.vertices.size()]);
+    for(size_t index = 0; index < polygon_b.Vertices.size() - 1; ++index) {
+        indices.emplace_back(polygon_b.Vertices[(index + vertex_in_b) % polygon_b.Vertices.size()]);
         neighbors.emplace_back(
-            polygon_b.neighbors[(index + vertex_in_b) % polygon_b.neighbors.size()]);
+            polygon_b.Neighbors[(index + vertex_in_b) % polygon_b.Neighbors.size()]);
     }
-    for(size_t index = 0; index < polygon_a.vertices.size() - 1; ++index) {
+    for(size_t index = 0; index < polygon_a.Vertices.size() - 1; ++index) {
         indices.emplace_back(
-            polygon_a.vertices[(index + first_common_vertex_in_a + 1) % polygon_a.vertices.size()]);
+            polygon_a.Vertices[(index + first_common_vertex_in_a + 1) % polygon_a.Vertices.size()]);
         neighbors.emplace_back(
             polygon_a
-                .neighbors[(index + first_common_vertex_in_a + 1) % polygon_a.neighbors.size()]);
+                .Neighbors[(index + first_common_vertex_in_a + 1) % polygon_a.Neighbors.size()]);
     }
 
     return std::make_tuple(indices, neighbors);
@@ -404,8 +404,8 @@ bool Mesh::tryMerge(size_t polygon_a_index, size_t polygon_b_index, size_t first
 
     if(polygonIsConvex(indices)) {
         auto& polygon_a = polygons[polygon_a_index];
-        polygon_a.vertices = indices;
-        polygon_a.neighbors = neighbors;
+        polygon_a.Vertices = indices;
+        polygon_a.Neighbors = neighbors;
         return true;
     }
 
@@ -430,15 +430,15 @@ std::vector<uint16_t> Mesh::TriangleIndices() const
     indices.reserve(polygons.size() * 3);
 
     for(const auto& p : polygons) {
-        if(p.vertices.size() < 3) {
+        if(p.Vertices.size() < 3) {
             continue;
         }
-        const uint16_t first = p.vertices.front();
-        const auto count_indices = p.vertices.size();
+        const uint16_t first = p.Vertices.front();
+        const auto count_indices = p.Vertices.size();
         for(size_t index = 2; index < count_indices; ++index) {
             indices.push_back(first);
-            indices.push_back(p.vertices[index - 1]);
-            indices.push_back(p.vertices[index]);
+            indices.push_back(p.Vertices[index - 1]);
+            indices.push_back(p.Vertices[index]);
         }
     }
     return indices;
@@ -457,13 +457,13 @@ std::vector<uint16_t> Mesh::SegmentIndices() const
     std::set<segment> segments{};
 
     for(const auto& p : polygons) {
-        const auto vertex_count = p.vertices.size();
+        const auto vertex_count = p.Vertices.size();
         if(vertex_count < 3) {
             continue;
         }
-        uint16_t a = p.vertices[vertex_count - 1];
+        uint16_t a = p.Vertices[vertex_count - 1];
         for(size_t index = 0; index < vertex_count; ++index) {
-            uint16_t b = p.vertices[index];
+            uint16_t b = p.Vertices[index];
             segments.insert(make_segment(a, b));
             a = b;
         }
@@ -482,14 +482,14 @@ void Mesh::trimEmptyPolygons()
 {
     const auto polygon_count =
         std::count_if(std::begin(polygons), std::end(polygons), [](const auto& p) {
-            return !p.vertices.empty();
+            return !p.Vertices.empty();
         });
     std::vector<Polygon> trimed_polygons{};
     trimed_polygons.reserve(polygon_count);
     std::unordered_map<size_t, size_t> index_mapping{};
 
     for(size_t index = 0; index < polygons.size(); ++index) {
-        if(polygons[index].vertices.empty()) {
+        if(polygons[index].Vertices.empty()) {
             continue;
         }
         index_mapping[index] = trimed_polygons.size();
@@ -497,7 +497,7 @@ void Mesh::trimEmptyPolygons()
     }
 
     for(auto& p : trimed_polygons) {
-        for(auto& n : p.neighbors) {
+        for(auto& n : p.Neighbors) {
             const auto iter = index_mapping.find(n);
             if(iter != std::end(index_mapping)) {
                 n = iter->second;
@@ -522,7 +522,7 @@ void Mesh::updateBoundingBoxes()
             float yMin = std::numeric_limits<float>::max();
             float yMax = std::numeric_limits<float>::lowest();
 
-            for(const auto& pIndex : polygon.vertices) {
+            for(const auto& pIndex : polygon.Vertices) {
                 const auto& p = vertices[pIndex];
                 xMin = std::min(xMin, static_cast<float>(p.x));
                 xMax = std::max(xMax, static_cast<float>(p.x));
@@ -583,18 +583,18 @@ std::stringstream Mesh::IntoLibPolyanyaMeshDescription() const
         // vertex index.
         struct Wedge {
             /// index 0 is previous index, index 2 is the next index
-            size_t vertex_indices[3];
+            size_t VertexIndices[3];
             /// represents the orientation of the wedge as ccw rotation in radians vs the [0,1]
             /// vector
-            size_t polygon_index;
-            double angle;
-            bool operator<(const Wedge& other) const { return angle < other.angle; }
+            size_t PolygonIndex;
+            double Angle;
+            bool operator<(const Wedge& other) const { return Angle < other.Angle; }
         };
 
         std::vector<Wedge> neighbor_wedge{};
         const glm::dvec2 ref{0, 1};
         for(size_t polygon_index = 0; polygon_index < polygons.size(); ++polygon_index) {
-            const auto& polygon_vertices = polygons[polygon_index].vertices;
+            const auto& polygon_vertices = polygons[polygon_index].Vertices;
             const auto count_vertices = polygon_vertices.size();
             if(const auto idx = indexOfValue(polygon_vertices, vertex_index); idx) {
                 const size_t prev_idx = (*idx + count_vertices - 1) % count_vertices;
@@ -614,12 +614,12 @@ std::stringstream Mesh::IntoLibPolyanyaMeshDescription() const
         std::vector<size_t> neighbor_indices{};
         neighbor_indices.reserve(2 * neighbor_wedge.size());
         for(size_t idx = 0; idx < neighbor_wedge.size(); ++idx) {
-            neighbor_indices.emplace_back(neighbor_wedge[idx].polygon_index);
+            neighbor_indices.emplace_back(neighbor_wedge[idx].PolygonIndex);
             // If the wedges do not share an edge that means they are not touching and there is a
             // gap in between
             const size_t next_idx = (idx + 1) % neighbor_wedge.size();
-            if(neighbor_wedge[idx].vertex_indices[0] !=
-               neighbor_wedge[next_idx].vertex_indices[2]) {
+            if(neighbor_wedge[idx].VertexIndices[0] !=
+               neighbor_wedge[next_idx].VertexIndices[2]) {
                 neighbor_indices.emplace_back(Mesh::Polygon::InvalidIndex);
             }
         }
@@ -642,13 +642,13 @@ std::stringstream Mesh::IntoLibPolyanyaMeshDescription() const
     buf << "\n";
 
     for(const auto& p : polygons) {
-        buf << p.vertices.size() << " ";
-        for(const auto& v : p.vertices) {
+        buf << p.Vertices.size() << " ";
+        for(const auto& v : p.Vertices) {
             buf << toPolyanyaIndex(v) << " ";
         }
-        for(size_t idx = 0; idx < p.neighbors.size(); ++idx) {
-            const size_t shifted_idx = (idx + p.neighbors.size() - 1) % p.neighbors.size();
-            const auto n = p.neighbors[shifted_idx];
+        for(size_t idx = 0; idx < p.Neighbors.size(); ++idx) {
+            const size_t shifted_idx = (idx + p.Neighbors.size() - 1) % p.Neighbors.size();
+            const auto n = p.Neighbors[shifted_idx];
             buf << toPolyanyaIndex(n) << " ";
         }
         buf << "\n";
@@ -666,10 +666,10 @@ static double cross2D(glm::dvec2 a, glm::dvec2 b)
 bool Mesh::TriangleContains(const size_t polygonIndex, glm::dvec2 p) const
 {
     const auto& poly = polygons[polygonIndex];
-    assert(poly.vertices.size() == 3);
-    const auto a = vertices[poly.vertices[0]];
-    const auto b = vertices[poly.vertices[1]];
-    const auto c = vertices[poly.vertices[2]];
+    assert(poly.Vertices.size() == 3);
+    const auto a = vertices[poly.Vertices[0]];
+    const auto b = vertices[poly.Vertices[1]];
+    const auto c = vertices[poly.Vertices[2]];
 
     if(cross2D(p - a, b - a) < 0) {
         return false;

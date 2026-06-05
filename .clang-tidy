@@ -17,4 +17,20 @@ Checks: >-
     modernize-unary-static-assert,
     modernize-use-bool-literals,
     modernize-use-override,
+    readability-identifier-naming,
 HeaderFilterRegex: '.*'
+CheckOptions:
+    - key: readability-identifier-naming.PublicMethodCase
+      value: CamelCase
+    - key: readability-identifier-naming.PublicMethodIgnoredRegexp
+      value: '^(parse|format)$'
+    - key: readability-identifier-naming.ProtectedMethodCase
+      value: camelBack
+    - key: readability-identifier-naming.PrivateMethodCase
+      value: camelBack
+    - key: readability-identifier-naming.PublicMemberCase
+      value: CamelCase
+    - key: readability-identifier-naming.ProtectedMemberCase
+      value: camelBack
+    - key: readability-identifier-naming.PrivateMemberCase
+      value: camelBack

@@ -28,13 +28,13 @@ void init_collision_free_speed_model_v2(py::module_& m)
                         double desiredSpeed,
                         double radius) {
                 return CollisionFreeSpeedModelV2Data{
-                    .strengthNeighborRepulsion = strengthNeighborRepulsion,
-                    .rangeNeighborRepulsion = rangeNeighborRepulsion,
-                    .strengthGeometryRepulsion = strengthGeometryRepulsion,
-                    .rangeGeometryRepulsion = rangeGeometryRepulsion,
-                    .timeGap = timeGap,
-                    .v0 = desiredSpeed,
-                    .radius = radius};
+                    .StrengthNeighborRepulsion = strengthNeighborRepulsion,
+                    .RangeNeighborRepulsion = rangeNeighborRepulsion,
+                    .StrengthGeometryRepulsion = strengthGeometryRepulsion,
+                    .RangeGeometryRepulsion = rangeGeometryRepulsion,
+                    .TimeGap = timeGap,
+                    .V0 = desiredSpeed,
+                    .Radius = radius};
             }),
             py::kw_only(),
             py::arg("strength_neighbor_repulsion"),
@@ -46,15 +46,15 @@ void init_collision_free_speed_model_v2(py::module_& m)
             py::arg("radius"))
         .def_readwrite(
             "strength_neighbor_repulsion",
-            &CollisionFreeSpeedModelV2Data::strengthNeighborRepulsion)
+            &CollisionFreeSpeedModelV2Data::StrengthNeighborRepulsion)
         .def_readwrite(
-            "range_neighbor_repulsion", &CollisionFreeSpeedModelV2Data::rangeNeighborRepulsion)
+            "range_neighbor_repulsion", &CollisionFreeSpeedModelV2Data::RangeNeighborRepulsion)
         .def_readwrite(
             "strength_geometry_repulsion",
-            &CollisionFreeSpeedModelV2Data::strengthGeometryRepulsion)
+            &CollisionFreeSpeedModelV2Data::StrengthGeometryRepulsion)
         .def_readwrite(
-            "range_geometry_repulsion", &CollisionFreeSpeedModelV2Data::rangeGeometryRepulsion)
-        .def_readwrite("time_gap", &CollisionFreeSpeedModelV2Data::timeGap)
-        .def_readwrite("desired_speed", &CollisionFreeSpeedModelV2Data::v0)
-        .def_readwrite("radius", &CollisionFreeSpeedModelV2Data::radius);
+            "range_geometry_repulsion", &CollisionFreeSpeedModelV2Data::RangeGeometryRepulsion)
+        .def_readwrite("time_gap", &CollisionFreeSpeedModelV2Data::TimeGap)
+        .def_readwrite("desired_speed", &CollisionFreeSpeedModelV2Data::V0)
+        .def_readwrite("radius", &CollisionFreeSpeedModelV2Data::Radius);
 }

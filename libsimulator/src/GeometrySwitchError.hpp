@@ -4,6 +4,7 @@
 #include "SimulationError.hpp"
 #include "Stage.hpp"
 
+#include <utility>
 #include <vector>
 
 class GeometrySwitchError : public SimulationError
@@ -18,7 +19,7 @@ public:
         std::vector<GenericAgent::ID> faultyAgents_,
         std::vector<BaseStage::ID> faultyStages_,
         const Args&... args)
-        : SimulationError(msg, args...), faultyAgents(faultyAgents_), faultyStages(faultyStages_)
+        : SimulationError(msg, args...), faultyAgents(std::move(faultyAgents_)), faultyStages(std::move(faultyStages_))
     {
     }
 

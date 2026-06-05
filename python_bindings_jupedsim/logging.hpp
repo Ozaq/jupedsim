@@ -8,10 +8,10 @@ class LogCallbackOwner
 public:
     using LogCallback = Logging::Logger::LogCallback;
 
-    LogCallback debug{};
-    LogCallback info{};
-    LogCallback warning{};
-    LogCallback error{};
+    LogCallback Debug{};
+    LogCallback Info{};
+    LogCallback Warning{};
+    LogCallback Error{};
 
 public:
     static LogCallbackOwner& Instance();

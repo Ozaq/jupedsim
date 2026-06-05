@@ -19,10 +19,10 @@ class NeighborhoodSearch;
 struct GenericAgent;
 
 struct PedestrianUpdate {
-    std::optional<Point> position{};
-    std::optional<Point> velocity{};
-    Point e0{}; // desired direction
-    bool resetTurning{false};
+    std::optional<Point> Position{};
+    std::optional<Point> Velocity{};
+    Point E0{}; // desired direction
+    bool ResetTurning{false};
 };
 
 template <>
@@ -34,11 +34,11 @@ struct fmt::formatter<PedestrianUpdate> {
     {
         return fmt::format_to(
             ctx.out(),
-            "Upd[position={}, velocity={}, e0={}, resetTurning={}]",
-            u.position.value_or(Point{}),
-            u.velocity.value_or(Point{}),
-            u.e0,
-            u.resetTurning);
+            "Upd[Position ={}, Velocity ={}, E0 ={}, ResetTurning ={}]",
+            u.Position.value_or(Point{}),
+            u.Velocity.value_or(Point{}),
+            u.E0,
+            u.ResetTurning);
     }
 };
 
@@ -80,7 +80,7 @@ class OperationalModel : public Clonable<OperationalModel>
 {
 public:
     OperationalModel() = default;
-    virtual ~OperationalModel() = default;
+    ~OperationalModel() override = default;
 
     virtual OperationalModelType Type() const = 0;
     virtual OperationalModelUpdate ComputeNewPosition(

@@ -31,14 +31,14 @@ void init_social_force_model(py::module_& m)
                         double forceDistance,
                         double radius) {
                 return SocialForceModelData{
-                    .velocity = intoPoint(velocity),
-                    .mass = mass,
-                    .desiredSpeed = desiredSpeed,
-                    .reactionTime = reactionTime,
-                    .agentScale = agentScale,
-                    .obstacleScale = obstacleScale,
-                    .forceDistance = forceDistance,
-                    .radius = radius};
+                    .Velocity = intoPoint(velocity),
+                    .Mass = mass,
+                    .DesiredSpeed = desiredSpeed,
+                    .ReactionTime = reactionTime,
+                    .AgentScale = agentScale,
+                    .ObstacleScale = obstacleScale,
+                    .ForceDistance = forceDistance,
+                    .Radius = radius};
             }),
             py::kw_only(),
             py::arg("velocity"),
@@ -51,15 +51,15 @@ void init_social_force_model(py::module_& m)
             py::arg("radius"))
         .def_property(
             "velocity",
-            [](const SocialForceModelData& obj) { return intoTuple(obj.velocity); },
+            [](const SocialForceModelData& obj) { return intoTuple(obj.Velocity); },
             [](SocialForceModelData& obj, std::tuple<double, double> pt) {
-                obj.velocity = intoPoint(pt);
+                obj.Velocity = intoPoint(pt);
             })
-        .def_readwrite("mass", &SocialForceModelData::mass)
-        .def_readwrite("desired_speed", &SocialForceModelData::desiredSpeed)
-        .def_readwrite("reaction_time", &SocialForceModelData::reactionTime)
-        .def_readwrite("agent_scale", &SocialForceModelData::agentScale)
-        .def_readwrite("obstacle_scale", &SocialForceModelData::obstacleScale)
-        .def_readwrite("force_distance", &SocialForceModelData::forceDistance)
-        .def_readwrite("radius", &SocialForceModelData::radius);
+        .def_readwrite("mass", &SocialForceModelData::Mass)
+        .def_readwrite("desired_speed", &SocialForceModelData::DesiredSpeed)
+        .def_readwrite("reaction_time", &SocialForceModelData::ReactionTime)
+        .def_readwrite("agent_scale", &SocialForceModelData::AgentScale)
+        .def_readwrite("obstacle_scale", &SocialForceModelData::ObstacleScale)
+        .def_readwrite("force_distance", &SocialForceModelData::ForceDistance)
+        .def_readwrite("radius", &SocialForceModelData::Radius);
 }

@@ -6,9 +6,9 @@
 
 static bool intersectsLine(const AABB& boundingBox, const LineSegment& lineSegment)
 {
-    const Point base = lineSegment.p1;
-    const Point dir = lineSegment.p2 - lineSegment.p1;
-    const Point n = Point{dir.y, -dir.x};
+    const Point base = lineSegment.P1;
+    const Point dir = lineSegment.P2 - lineSegment.P1;
+    const Point n = Point{dir.Y, -dir.X};
 
     const Point c1 = boundingBox.BottomLeft() - base;
     const Point c2 = boundingBox.TopRight() - base;
@@ -29,7 +29,7 @@ bool AABB::Intersects(const LineSegment& lineSegment) const
         return false;
     }
 
-    const AABB bbLineSegment({lineSegment.p1, lineSegment.p2});
+    const AABB bbLineSegment({lineSegment.P1, lineSegment.P2});
 
     return this->Overlap(bbLineSegment);
 }

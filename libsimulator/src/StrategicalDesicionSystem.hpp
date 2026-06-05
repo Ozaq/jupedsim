@@ -23,10 +23,10 @@ public:
         StageManager& stageManager) const
     {
         for(auto& agent : agents) {
-            const auto [target, id] = journeys.at(agent.journeyId)->Target(agent);
-            agent.target = target;
-            stageManager.MigrateAgent(agent.stageId, id);
-            agent.stageId = id;
+            const auto [target, id] = journeys.at(agent.JourneyID)->Target(agent);
+            agent.Target = target;
+            stageManager.MigrateAgent(agent.StageID, id);
+            agent.StageID = id;
         }
     }
 };

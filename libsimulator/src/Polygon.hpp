@@ -10,7 +10,7 @@ class Polygon
 {
     using PolygonType = Poly;
 
-    PolygonType _polygon;
+    PolygonType polygon;
 
 public:
     explicit Polygon(const std::vector<Point>& points);
@@ -24,5 +24,5 @@ public:
     Point Centroid() const;
     std::tuple<Point, double> ContainingCircle() const;
 
-    operator PolygonType() const { return _polygon; }
+    operator PolygonType() const { return polygon; }
 };

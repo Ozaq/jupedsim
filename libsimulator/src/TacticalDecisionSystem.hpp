@@ -16,8 +16,8 @@ public:
     void Run(RoutingEngine& routingEngine, auto&& agents) const
     {
         for(auto& agent : agents) {
-            const auto dest = agent.target;
-            agent.destination = routingEngine.ComputeWaypoint(agent.pos, dest);
+            const auto dest = agent.Target;
+            agent.Destination = routingEngine.ComputeWaypoint(agent.Pos, dest);
         }
     }
 };

@@ -26,18 +26,18 @@ public:
 
 private:
     struct EdgeAdjacencyInfo {
-        size_t offset;
-        size_t length;
+        size_t Offset;
+        size_t Length;
     };
 
-    std::vector<V> vertex_data{};
-    std::vector<EdgeAdjacencyInfo> edge_adjacency_info{};
-    std::vector<std::tuple<VertexId, E>> adjacency_list{};
+    std::vector<V> vertexData{};
+    std::vector<EdgeAdjacencyInfo> edgeAdjacencyInfo{};
+    std::vector<std::tuple<VertexId, E>> adjacencyList{};
 
 public:
     class Builder
     {
-        std::vector<V> vertex_data{};
+        std::vector<V> vertexData{};
         std::vector<std::tuple<VertexId, VertexId, E>> edges{};
 
     public:
@@ -45,8 +45,8 @@ public:
         ~Builder() = default;
         VertexId AddVertex(V v = {})
         {
-            vertex_data.emplace_back(std::move(v));
-            return vertex_data.size() - 1;
+            vertexData.emplace_back(std::move(v));
+            return vertexData.size() - 1;
         };
         void AddEdge(VertexId from, VertexId to, E e = {})
         {
@@ -54,7 +54,7 @@ public:
         }
         DirectedGraph<V, E> Build()
         {
-            vertex_data.shrink_to_fit();
+            vertexData.shrink_to_fit();
 
             std::sort(std::begin(edges), std::end(edges), [](const auto& a, const auto& b) {
                 return std::get<0>(a) < std::get<0>(b);
@@ -64,7 +64,7 @@ public:
             adjacency_list.reserve(edges.size());
 
             std::vector<EdgeAdjacencyInfo> edge_adjacency_info{};
-            edge_adjacency_info.reserve(vertex_data.size());
+            edge_adjacency_info.reserve(vertexData.size());
 
             VertexId current_source_id{};
             for(const auto& [from, to, data] : edges) {
@@ -75,33 +75,33 @@ public:
                 } else if(from != current_source_id) {
                     current_source_id = from;
                     const auto& last_info = edge_adjacency_info.back();
-                    const auto offset = last_info.offset + last_info.length;
+                    const auto offset = last_info.Offset + last_info.Length;
                     edge_adjacency_info.push_back({offset, 1});
                 } else {
-                    edge_adjacency_info.back().length += 1;
+                    edge_adjacency_info.back().Length += 1;
                 }
                 adjacency_list.push_back(std::make_tuple(to, data));
             }
 
             return DirectedGraph<V, E>{
-                std::move(vertex_data), std::move(edge_adjacency_info), std::move(adjacency_list)};
+                std::move(vertexData), std::move(edge_adjacency_info), std::move(adjacency_list)};
         }
     };
 
     const auto& VertexData(VertexId id) const
         requires(!std::is_void_v<V>)
     {
-        return vertex_data.at(id);
+        return vertexData.at(id);
     }
 
-    const std::vector<V>& Vertices() const { return vertex_data; }
+    const std::vector<V>& Vertices() const { return vertexData; }
 
     IteratorPair<EdgeIter> Edges(VertexId id) const
     {
-        const auto& info = edge_adjacency_info.at(id);
+        const auto& info = edgeAdjacencyInfo.at(id);
         return {
-            std::begin(adjacency_list) + info.offset,
-            std::begin(adjacency_list) + info.offset + info.length};
+            std::begin(adjacencyList) + info.Offset,
+            std::begin(adjacencyList) + info.Offset + info.Length};
     }
 
     const E& Edge(VertexId from, VertexId to) const
@@ -114,7 +114,7 @@ public:
         throw std::out_of_range("Destination edge does not exist");
     }
 
-    VertexId CountVertices() const { return vertex_data.size(); }
+    VertexId CountVertices() const { return vertexData.size(); }
 
     // TODO remove
     DirectedGraph() = default;
@@ -124,9 +124,9 @@ private:
         std::vector<V>&& _vertex_data,
         std::vector<EdgeAdjacencyInfo>&& _edge_adjacency_info,
         std::vector<std::tuple<VertexId, E>>&& _adjacency_list)
-        : vertex_data(_vertex_data)
-        , edge_adjacency_info(_edge_adjacency_info)
-        , adjacency_list(_adjacency_list)
+        : vertexData(_vertex_data)
+        , edgeAdjacencyInfo(_edge_adjacency_info)
+        , adjacencyList(_adjacency_list)
     {
     }
 };

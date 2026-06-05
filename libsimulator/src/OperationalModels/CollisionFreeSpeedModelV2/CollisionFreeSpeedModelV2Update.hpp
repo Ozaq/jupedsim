@@ -3,6 +3,6 @@
 #include "Point.hpp"
 
 struct CollisionFreeSpeedModelV2Update {
-    Point position{};
-    Point orientation{};
+    Point Position{};
+    Point Orientation{};
 };

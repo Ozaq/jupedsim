@@ -9,8 +9,8 @@
 
 class GeometryBuilder
 {
-    std::vector<Polygon> _accessibleAreas{};
-    std::vector<Polygon> _exclusions{};
+    std::vector<Polygon> accessibleAreas{};
+    std::vector<Polygon> exclusions{};
 
 public:
     GeometryBuilder() = default;

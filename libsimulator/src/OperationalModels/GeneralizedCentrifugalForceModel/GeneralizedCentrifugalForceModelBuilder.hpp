@@ -5,14 +5,14 @@
 
 class GeneralizedCentrifugalForceModelBuilder
 {
-    double _nuped;
-    double _nuwall;
-    double _dist_effPed;
-    double _dist_effWall;
-    double _intp_widthped;
-    double _intp_widthwall;
-    double _maxfped;
-    double _maxfwall;
+    double nuped;
+    double nuwall;
+    double distEffPed;
+    double distEffWall;
+    double intpWidthped;
+    double intpWidthwall;
+    double maxfped;
+    double maxfwall;
 
 public:
     GeneralizedCentrifugalForceModelBuilder(

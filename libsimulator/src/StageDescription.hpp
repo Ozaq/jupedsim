@@ -11,20 +11,20 @@ struct DirectSteeringDescription {
 };
 
 struct WaypointDescription {
-    Point position;
-    double distance;
+    Point Position;
+    double Distance;
 };
 
 struct ExitDescription {
-    Polygon polygon;
+    Polygon Area;
 };
 
 struct NotifiableWaitingSetDescription {
-    std::vector<Point> slots;
+    std::vector<Point> Slots;
 };
 
 struct NotifiableQueueDescription {
-    std::vector<Point> slots;
+    std::vector<Point> Slots;
 };
 
 using StageDescription = std::variant<

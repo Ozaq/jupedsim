@@ -21,25 +21,25 @@ public:
 
     /// 3-component space-time point/vector used internally
     struct SpaceTimePoint {
-        double x{};
-        double y{};
-        double t{};
+        double X{};
+        double Y{};
+        double T{};
     };
 
 private:
     /// Precomputed 2D collision probability field I(x,y) and its gradient.
     /// Constant along time axis; time is a validity window [0,1] normalized.
     struct IntrinsicField {
-        std::vector<double> values;
-        std::vector<Point> gradients; // (dI/dx, dI/dy)
-        double xMin{-3.0};
-        double xMax{3.0};
-        double yMin{-3.0};
-        double yMax{3.0};
-        double dx{0.1};
-        double dy{0.1};
-        int nx{61};
-        int ny{61};
+        std::vector<double> Values;
+        std::vector<Point> Gradients; // (dI/dx, dI/dy)
+        double XMin{-3.0};
+        double XMax{3.0};
+        double YMin{-3.0};
+        double YMax{3.0};
+        double Dx{0.1};
+        double Dy{0.1};
+        int Nx{61};
+        int Ny{61};
 
         void Compute(double sigma);
         /// Bilinear interpolation. Returns (0, {0,0}) for out-of-bounds.
@@ -47,16 +47,16 @@ private:
     };
 
     // Model-level parameters
-    double _timeHorizon;
-    double _stepSize;
-    double _timeUncertainty;
-    double _velocityUncertaintyX;
-    double _velocityUncertaintyY;
-    int _numSamples;
-    double _cutOffRadius;
+    double timeHorizon;
+    double stepSize;
+    double timeUncertainty;
+    double velocityUncertaintyX;
+    double velocityUncertaintyY;
+    int numSamples;
+    double cutOffRadius;
 
-    IntrinsicField _intrinsicField;
-    mutable std::mt19937 _rng;
+    IntrinsicField intrinsicField;
+    mutable std::mt19937 rng;
 
 public:
     WarpDriverModel(

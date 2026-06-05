@@ -4,11 +4,11 @@
 #include "SocialForceModel.hpp"
 
 SocialForceModelBuilder::SocialForceModelBuilder(double bodyForce, double friction)
-    : _bodyForce(bodyForce), _friction(friction)
+    : bodyForce(bodyForce), friction(friction)
 {
 }
 
 SocialForceModel SocialForceModelBuilder::Build()
 {
-    return SocialForceModel(_bodyForce, _friction);
+    return SocialForceModel(bodyForce, friction);
 }

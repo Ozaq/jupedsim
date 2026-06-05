@@ -14,7 +14,7 @@ void bmDistToOnLine(benchmark::State& state, Args&&... args)
     auto lineSegment = std::get<0>(args_tuple);
 
     auto factor = state.range(0) / 100.;
-    Point point(lineSegment.p1 + (lineSegment.p2 - lineSegment.p1) * factor);
+    Point point(lineSegment.P1 + (lineSegment.P2 - lineSegment.P1) * factor);
 
     for(auto _ : state) {
         lineSegment.DistTo(point);
@@ -27,13 +27,13 @@ void bmDistTo(benchmark::State& state, Args&&... args)
     auto args_tuple = std::make_tuple(std::move(args)...);
     auto lineSegment = std::get<LineSegment>(args_tuple);
 
-    auto edgePoint = lineSegment.p2 + lineSegment.NormalVec() * 3.;
+    auto edgePoint = lineSegment.P2 + lineSegment.NormalVec() * 3.;
 
-    auto direction = edgePoint - lineSegment.p1;
+    auto direction = edgePoint - lineSegment.P1;
 
     auto factor = state.range(0) / 100.;
 
-    Point point(lineSegment.p1 + direction * factor);
+    Point point(lineSegment.P1 + direction * factor);
 
     for(auto _ : state) {
         lineSegment.DistTo(point);

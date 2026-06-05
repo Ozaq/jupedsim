@@ -21,9 +21,9 @@ public:
     using NeighborhoodSearchType = NeighborhoodSearch<GenericAgent>;
 
 private:
-    double _cutOffRadius{3};
+    double cutOffRadius{3};
     /// Add a small outward component to maintain minimum distance from walls.
-    double _pushoutStrength;
+    double pushoutStrength;
     mutable std::mt19937 gen;
 
 public:
@@ -43,15 +43,15 @@ public:
     std::unique_ptr<OperationalModel> Clone() const override;
 
 private:
-    double OptimalSpeed(const GenericAgent& ped, double spacing, double time_gap) const;
-    Point CalculateInfluenceDirection(
+    double optimalSpeed(const GenericAgent& ped, double spacing, double time_gap) const;
+    Point calculateInfluenceDirection(
         const Point& desiredDirection,
         const Point& predictedDirection) const;
     double
-    GetSpacing(const GenericAgent& ped1, const GenericAgent& ped2, const Point& direction) const;
-    Point NeighborRepulsion(const GenericAgent& ped1, const GenericAgent& ped2) const;
+    getSpacing(const GenericAgent& ped1, const GenericAgent& ped2, const Point& direction) const;
+    Point neighborRepulsion(const GenericAgent& ped1, const GenericAgent& ped2) const;
 
-    Point HandleWallAvoidance(
+    Point handleWallAvoidance(
         const Point& direction,
         const Point& agentPosition,
         double agentRadius,
@@ -59,5 +59,5 @@ private:
         double wallBufferDistance) const;
 
     Point
-    UpdateDirection(const GenericAgent& ped, const Point& calculatedDirection, double dt) const;
+    updateDirection(const GenericAgent& ped, const Point& calculatedDirection, double dt) const;
 };

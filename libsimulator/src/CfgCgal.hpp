@@ -39,7 +39,9 @@ public:
         typedef typename Fb::template Rebind_TDS<TDS2>::Other Fb2;
         typedef MyFace<Gt, Fb2> Other;
     };
+    // NOLINTNEXTLINE(readability-identifier-naming)
     void set_in_domain(bool v) { in = v; }
+    // NOLINTNEXTLINE(readability-identifier-naming)
     bool get_in_domain() const { return in; }
 };
 using TDS = CGAL::Triangulation_data_structure_2<Vb, MyFace<K>>;

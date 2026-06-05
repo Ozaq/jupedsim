@@ -45,10 +45,10 @@
 
 void WarpDriverModel::IntrinsicField::Compute(double sigma)
 {
-    nx = static_cast<int>(std::round((xMax - xMin) / dx)) + 1;
-    ny = static_cast<int>(std::round((yMax - yMin) / dy)) + 1;
-    values.resize(static_cast<size_t>(nx * ny), 0.0);
-    gradients.resize(static_cast<size_t>(nx * ny), Point{0.0, 0.0});
+    Nx = static_cast<int>(std::round((XMax - XMin) / Dx)) + 1;
+    Ny = static_cast<int>(std::round((YMax - YMin) / Dy)) + 1;
+    Values.resize(static_cast<size_t>(Nx * Ny), 0.0);
+    Gradients.resize(static_cast<size_t>(Nx * Ny), Point{0.0, 0.0});
 
     const double sigma_squared = sigma * sigma;
 
@@ -57,10 +57,10 @@ void WarpDriverModel::IntrinsicField::Compute(double sigma)
     const double integrationStep = 0.05;
     const double integrationRadius = 1.0; // unit disk support
 
-    for(int ix = 0; ix < nx; ++ix) {
-        for(int iy = 0; iy < ny; ++iy) {
-            const double px = xMin + ix * dx;
-            const double py = yMin + iy * dy;
+    for(int ix = 0; ix < Nx; ++ix) {
+        for(int iy = 0; iy < Ny; ++iy) {
+            const double px = XMin + ix * Dx;
+            const double py = YMin + iy * Dy;
 
             double val = 0.0;
             // Integrate f(px-u, py-v) * g(u,v) du dv over g's support (unit disk)
@@ -74,65 +74,65 @@ void WarpDriverModel::IntrinsicField::Compute(double sigma)
                 }
             }
             val *= integrationStep * integrationStep;
-            values[static_cast<size_t>(ix * ny + iy)] = val;
+            Values[static_cast<size_t>(ix * Ny + iy)] = val;
         }
     }
 
     // Normalize so peak ≈ 1
-    const double maxVal = *std::max_element(values.begin(), values.end());
+    const double maxVal = *std::max_element(Values.begin(), Values.end());
     if(maxVal > 0.0) {
-        for(auto& v : values) {
+        for(auto& v : Values) {
             v /= maxVal;
         }
     }
 
     // Compute gradients via central differences
-    for(int ix = 0; ix < nx; ++ix) {
-        for(int iy = 0; iy < ny; ++iy) {
+    for(int ix = 0; ix < Nx; ++ix) {
+        for(int iy = 0; iy < Ny; ++iy) {
             double dIdx = 0.0;
             double dIdy = 0.0;
-            if(ix > 0 && ix < nx - 1) {
-                dIdx = (values[static_cast<size_t>((ix + 1) * ny + iy)] -
-                        values[static_cast<size_t>((ix - 1) * ny + iy)]) /
-                       (2.0 * dx);
+            if(ix > 0 && ix < Nx - 1) {
+                dIdx = (Values[static_cast<size_t>((ix + 1) * Ny + iy)] -
+                        Values[static_cast<size_t>((ix - 1) * Ny + iy)]) /
+                       (2.0 * Dx);
             }
-            if(iy > 0 && iy < ny - 1) {
-                dIdy = (values[static_cast<size_t>(ix * ny + (iy + 1))] -
-                        values[static_cast<size_t>(ix * ny + (iy - 1))]) /
-                       (2.0 * dy);
+            if(iy > 0 && iy < Ny - 1) {
+                dIdy = (Values[static_cast<size_t>(ix * Ny + (iy + 1))] -
+                        Values[static_cast<size_t>(ix * Ny + (iy - 1))]) /
+                       (2.0 * Dy);
             }
-            gradients[static_cast<size_t>(ix * ny + iy)] = Point{dIdx, dIdy};
+            Gradients[static_cast<size_t>(ix * Ny + iy)] = Point{dIdx, dIdy};
         }
     }
 }
 
 std::pair<double, Point> WarpDriverModel::IntrinsicField::Sample(double x, double y) const
 {
-    if(x < xMin || x > xMax || y < yMin || y > yMax) {
+    if(x < XMin || x > XMax || y < YMin || y > YMax) {
         return {0.0, Point{0.0, 0.0}};
     }
 
-    const double fx = (x - xMin) / dx;
-    const double fy = (y - yMin) / dy;
-    const int ix = std::clamp(static_cast<int>(fx), 0, nx - 2);
-    const int iy = std::clamp(static_cast<int>(fy), 0, ny - 2);
+    const double fx = (x - XMin) / Dx;
+    const double fy = (y - YMin) / Dy;
+    const int ix = std::clamp(static_cast<int>(fx), 0, Nx - 2);
+    const int iy = std::clamp(static_cast<int>(fy), 0, Ny - 2);
     const double sx = fx - ix;
     const double sy = fy - iy;
 
-    const auto idx = [&](int i, int j) -> size_t { return static_cast<size_t>(i * ny + j); };
+    const auto idx = [&](int i, int j) -> size_t { return static_cast<size_t>(i * Ny + j); };
 
     // Bilinear interpolation
-    const double v00 = values[idx(ix, iy)];
-    const double v10 = values[idx(ix + 1, iy)];
-    const double v01 = values[idx(ix, iy + 1)];
-    const double v11 = values[idx(ix + 1, iy + 1)];
+    const double v00 = Values[idx(ix, iy)];
+    const double v10 = Values[idx(ix + 1, iy)];
+    const double v01 = Values[idx(ix, iy + 1)];
+    const double v11 = Values[idx(ix + 1, iy + 1)];
     const double val =
         v00 * (1 - sx) * (1 - sy) + v10 * sx * (1 - sy) + v01 * (1 - sx) * sy + v11 * sx * sy;
 
-    const Point g00 = gradients[idx(ix, iy)];
-    const Point g10 = gradients[idx(ix + 1, iy)];
-    const Point g01 = gradients[idx(ix, iy + 1)];
-    const Point g11 = gradients[idx(ix + 1, iy + 1)];
+    const Point g00 = Gradients[idx(ix, iy)];
+    const Point g10 = Gradients[idx(ix + 1, iy)];
+    const Point g01 = Gradients[idx(ix, iy + 1)];
+    const Point g11 = Gradients[idx(ix + 1, iy + 1)];
     const Point grad = g00 * ((1 - sx) * (1 - sy)) + g10 * (sx * (1 - sy)) + g01 * ((1 - sx) * sy) +
                        g11 * (sx * sy);
 
@@ -152,42 +152,42 @@ using STP = WarpDriverModel::SpaceTimePoint;
 STP WarpLocalForward(const STP& s, Point posA, Point orientA, Point posB, Point orientB)
 {
     // Rotate from a's frame to world
-    const double cosA = orientA.x;
-    const double sinA = orientA.y;
-    const double wx = cosA * s.x - sinA * s.y + posA.x;
-    const double wy = sinA * s.x + cosA * s.y + posA.y;
+    const double cosA = orientA.X;
+    const double sinA = orientA.Y;
+    const double wx = cosA * s.X - sinA * s.Y + posA.X;
+    const double wy = sinA * s.X + cosA * s.Y + posA.Y;
 
     // World to b's frame
-    const double dx = wx - posB.x;
-    const double dy = wy - posB.y;
-    const double cosB = orientB.x;
-    const double sinB = orientB.y;
-    return STP{cosB * dx + sinB * dy, -sinB * dx + cosB * dy, s.t};
+    const double dx = wx - posB.X;
+    const double dy = wy - posB.Y;
+    const double cosB = orientB.X;
+    const double sinB = orientB.Y;
+    return STP{cosB * dx + sinB * dy, -sinB * dx + cosB * dy, s.T};
 }
 
 // W_v: velocity shear. In b's frame, x' = x - speed_b * t
 STP WarpVelocityForward(const STP& s, double speedB)
 {
-    return STP{s.x - speedB * s.t, s.y, s.t};
+    return STP{s.X - speedB * s.T, s.Y, s.T};
 }
 
 // W_r: radius scaling (B.7). W_r(s) = s ★ (1/α, 1/α, 1).
 STP WarpRadiusForward(const STP& s, double radiusB)
 {
     const double invR = 1.0 / std::max(radiusB, 1e-6);
-    return STP{s.x * invR, s.y * invR, s.t};
+    return STP{s.X * invR, s.Y * invR, s.T};
 }
 
 // W_ts: time uncertainty. Scale (x,y) by 1/(1 + lambda*t)
 STP WarpTimeUncertaintyForward(const STP& s, double lambda)
 {
-    const double scale = 1.0 / (1.0 + lambda * std::max(s.t, 0.0));
-    return STP{s.x * scale, s.y * scale, s.t};
+    const double scale = 1.0 / (1.0 + lambda * std::max(s.T, 0.0));
+    return STP{s.X * scale, s.Y * scale, s.T};
 }
 
 struct VelocityUncertaintyScale {
-    double beta1;
-    double beta2;
+    double Beta1;
+    double Beta2;
 };
 
 // B.13: β₁ = 1/(1 + α₁·v/v_pref), β₂ = 1 + α₂·v/v_pref.
@@ -202,44 +202,44 @@ VelocityUncertaintyScale VelocityUncertaintyFactors(double uncertaintyX, double 
 STP WarpVelocityUncertaintyForward(const STP& s, double uncertaintyX, double uncertaintyY)
 {
     const auto [beta1, beta2] = VelocityUncertaintyFactors(uncertaintyX, uncertaintyY);
-    return STP{s.x * beta1, s.y * beta2, s.t};
+    return STP{s.X * beta1, s.Y * beta2, s.T};
 }
 
 // Full composition: forward from a's frame to b's Intrinsic Field space
 // Order: W_local -> W_v -> W_r -> W_ts -> W_vu
 // Then check W_th (time validity)
 struct WarpParams {
-    Point posA;
-    Point orientA;
-    Point posB;
-    Point orientB;
-    double speedB;
-    double radiusB;
-    double lambda;
-    double velocityUncertaintyX;
-    double velocityUncertaintyY;
-    double timeHorizon;
+    Point PosA;
+    Point OrientA;
+    Point PosB;
+    Point OrientB;
+    double SpeedB;
+    double RadiusB;
+    double Lambda;
+    double VelocityUncertaintyX;
+    double VelocityUncertaintyY;
+    double TimeHorizon;
 };
 
 // Probability scaling (B.5 + B.14): product of inverse probability transforms.
 // W_tu^{-1}(p) = p*beta^2, W_vu^{-1}(p) = p*beta1*beta2.
 double ProbabilityScale(const STP& sOriginal, const WarpParams& p)
 {
-    const double beta_tu = 1.0 / (1.0 + p.lambda * std::max(sOriginal.t, 0.0));
+    const double beta_tu = 1.0 / (1.0 + p.Lambda * std::max(sOriginal.T, 0.0));
     const auto [beta1, beta2] =
-        VelocityUncertaintyFactors(p.velocityUncertaintyX, p.velocityUncertaintyY);
+        VelocityUncertaintyFactors(p.VelocityUncertaintyX, p.VelocityUncertaintyY);
     return beta_tu * beta_tu * beta1 * beta2;
 }
 
 STP ComposeForward(const STP& s, const WarpParams& p)
 {
-    auto s1 = WarpLocalForward(s, p.posA, p.orientA, p.posB, p.orientB);
-    auto s2 = WarpVelocityForward(s1, p.speedB);
-    auto s3 = WarpRadiusForward(s2, p.radiusB);
-    auto s4 = WarpTimeUncertaintyForward(s3, p.lambda);
-    auto s5 = WarpVelocityUncertaintyForward(s4, p.velocityUncertaintyX, p.velocityUncertaintyY);
+    auto s1 = WarpLocalForward(s, p.PosA, p.OrientA, p.PosB, p.OrientB);
+    auto s2 = WarpVelocityForward(s1, p.SpeedB);
+    auto s3 = WarpRadiusForward(s2, p.RadiusB);
+    auto s4 = WarpTimeUncertaintyForward(s3, p.Lambda);
+    auto s5 = WarpVelocityUncertaintyForward(s4, p.VelocityUncertaintyX, p.VelocityUncertaintyY);
     // Normalize time: map [0, timeHorizon] -> [0, 1]
-    s5.t = (p.timeHorizon > 0.0) ? s5.t / p.timeHorizon : 0.0;
+    s5.T = (p.TimeHorizon > 0.0) ? s5.T / p.TimeHorizon : 0.0;
     return s5;
 }
 
@@ -247,10 +247,10 @@ STP ComposeForward(const STP& s, const WarpParams& p)
 // in a's frame. Applies inverse Jacobians in reverse order.
 STP ComposeGradientInverse(const Point& gradI, const STP& sOriginal, const WarpParams& p)
 {
-    // Start with 3-component gradient in Intrinsic Field space: (gradI.x, gradI.y, 0)
+    // Start with 3-component gradient in Intrinsic Field space: (gradI.X, gradI.Y, 0)
     // since dI/dt = 0
-    double gx = gradI.x;
-    double gy = gradI.y;
+    double gx = gradI.X;
+    double gy = gradI.Y;
     double gt = 0.0;
 
     // Time normalization inverse Jacobian: dt_original = dt_normalized * timeHorizon
@@ -262,7 +262,7 @@ STP ComposeGradientInverse(const Point& gradI, const STP& sOriginal, const WarpP
     // forward factors (beta1, beta2) since J_vu = diag(beta1, beta2, 1).
     {
         const auto [beta1, beta2] =
-            VelocityUncertaintyFactors(p.velocityUncertaintyX, p.velocityUncertaintyY);
+            VelocityUncertaintyFactors(p.VelocityUncertaintyX, p.VelocityUncertaintyY);
         gx *= beta1;
         gy *= beta2;
     }
@@ -272,13 +272,13 @@ STP ComposeGradientInverse(const Point& gradI, const STP& sOriginal, const WarpP
     // TODO(perf): ComposeForward already computes this intermediate; cache and
     // reuse instead of recomputing the three warps here. ~15% per-sample saving.
     {
-        const double t = sOriginal.t;
-        const double beta = 1.0 / (1.0 + p.lambda * std::max(t, 0.0));
-        auto sAtTu = WarpLocalForward(sOriginal, p.posA, p.orientA, p.posB, p.orientB);
-        sAtTu = WarpVelocityForward(sAtTu, p.speedB);
-        sAtTu = WarpRadiusForward(sAtTu, p.radiusB);
-        const double gamma1 = -p.lambda * beta * beta * sAtTu.x;
-        const double gamma2 = -p.lambda * beta * beta * sAtTu.y;
+        const double t = sOriginal.T;
+        const double beta = 1.0 / (1.0 + p.Lambda * std::max(t, 0.0));
+        auto sAtTu = WarpLocalForward(sOriginal, p.PosA, p.OrientA, p.PosB, p.OrientB);
+        sAtTu = WarpVelocityForward(sAtTu, p.SpeedB);
+        sAtTu = WarpRadiusForward(sAtTu, p.RadiusB);
+        const double gamma1 = -p.Lambda * beta * beta * sAtTu.X;
+        const double gamma2 = -p.Lambda * beta * beta * sAtTu.Y;
         const double gxOld = gx;
         const double gyOld = gy;
         gx *= beta;
@@ -288,17 +288,17 @@ STP ComposeGradientInverse(const Point& gradI, const STP& sOriginal, const WarpP
 
     // W_r^-1: identity (B.9).
 
-    // W_v^-1 (B.12): g + (0, 0, -v·g.x).
+    // W_v^-1 (B.12): g + (0, 0, -v·g.X).
     {
-        gt -= p.speedB * gx;
+        gt -= p.SpeedB * gx;
     }
 
     // W_local inverse Jacobian: rotate from b's frame back to a's frame
     {
-        const double cosA = p.orientA.x;
-        const double sinA = p.orientA.y;
-        const double cosB = p.orientB.x;
-        const double sinB = p.orientB.y;
+        const double cosA = p.OrientA.X;
+        const double sinA = p.OrientA.Y;
+        const double cosB = p.OrientB.X;
+        const double sinB = p.OrientB.Y;
 
         // Combined rotation: b's frame -> world -> a's frame
         // R_a^T * R_b applied to gradient
@@ -328,21 +328,21 @@ WarpDriverModel::WarpDriverModel(
     double velocityUncertaintyY,
     int numSamples,
     uint64_t rngSeed)
-    : _timeHorizon(timeHorizon)
-    , _stepSize(stepSize)
-    , _timeUncertainty(timeUncertainty)
-    , _velocityUncertaintyX(velocityUncertaintyX)
-    , _velocityUncertaintyY(velocityUncertaintyY)
-    , _numSamples(numSamples)
+    : timeHorizon(timeHorizon)
+    , stepSize(stepSize)
+    , timeUncertainty(timeUncertainty)
+    , velocityUncertaintyX(velocityUncertaintyX)
+    , velocityUncertaintyY(velocityUncertaintyY)
+    , numSamples(numSamples)
     // Neighborhood cutoff: maximum distance at which a neighbor can still
     // collide with us within timeHorizon. Two agents closing head-on cover
     // 2 * v_max * timeHorizon, plus their combined radii, plus a small margin.
     // v_max and r_max are hardcoded pedestrian defaults; promote to constructor
     // parameters if mixed-speed populations need a tighter or wider cutoff.
-    , _cutOffRadius(2.0 * 1.5 * timeHorizon + 2.0 * 0.3 + 0.5)
-    , _rng(rngSeed)
+    , cutOffRadius(2.0 * 1.5 * timeHorizon + 2.0 * 0.3 + 0.5)
+    , rng(rngSeed)
 {
-    _intrinsicField.Compute(sigma);
+    intrinsicField.Compute(sigma);
 }
 
 OperationalModelType WarpDriverModel::Type() const
@@ -358,14 +358,14 @@ std::unique_ptr<OperationalModel> WarpDriverModel::Clone() const
 void WarpDriverModel::ApplyUpdate(const OperationalModelUpdate& update, GenericAgent& agent) const
 {
     const auto& upd = std::get<WarpDriverModelUpdate>(update);
-    auto& data = std::get<WarpDriverModelData>(agent.model);
-    agent.pos = upd.position;
-    agent.orientation = upd.orientation;
-    data.stuckTime = upd.stuckTime;
-    data.anchorX = upd.anchorX;
-    data.anchorY = upd.anchorY;
-    data.detourTime = upd.detourTime;
-    data.detourSide = upd.detourSide;
+    auto& data = std::get<WarpDriverModelData>(agent.Model);
+    agent.Pos = upd.Position;
+    agent.Orientation = upd.Orientation;
+    data.StuckTime = upd.StuckTime;
+    data.AnchorX = upd.AnchorX;
+    data.AnchorY = upd.AnchorY;
+    data.DetourTime = upd.DetourTime;
+    data.DetourSide = upd.DetourSide;
 }
 
 void WarpDriverModel::CheckModelConstraint(
@@ -373,21 +373,21 @@ void WarpDriverModel::CheckModelConstraint(
     const NeighborhoodSearchType& /*neighborhoodSearch*/,
     const CollisionGeometry& /*geometry*/) const
 {
-    const auto* data = std::get_if<WarpDriverModelData>(&agent.model);
+    const auto* data = std::get_if<WarpDriverModelData>(&agent.Model);
     if(!data) {
         throw SimulationError(
             "WarpDriverModel constraint check: agent {} does not have WarpDriverModelData",
-            agent.id);
+            agent.AgentID);
     }
-    if(data->radius <= 0.0) {
+    if(data->Radius <= 0.0) {
         throw SimulationError(
             "WarpDriverModel constraint check: agent {} has invalid radius {}",
-            agent.id,
-            data->radius);
+            agent.AgentID,
+            data->Radius);
     }
-    if(data->v0 < 0.0) {
+    if(data->V0 < 0.0) {
         throw SimulationError(
-            "WarpDriverModel constraint check: agent {} has invalid v0 {}", agent.id, data->v0);
+            "WarpDriverModel constraint check: agent {} has invalid v0 {}", agent.AgentID, data->V0);
     }
 }
 
@@ -397,11 +397,11 @@ OperationalModelUpdate WarpDriverModel::ComputeNewPosition(
     const CollisionGeometry& geometry,
     const NeighborhoodSearchType& neighborhoodSearch) const
 {
-    const auto& agentData = std::get<WarpDriverModelData>(ped.model);
-    const double speed = agentData.v0;
+    const auto& agentData = std::get<WarpDriverModelData>(ped.Model);
+    const double speed = agentData.V0;
 
     // Agent orientation (unit vector). If zero, default to +x.
-    Point orient = ped.orientation;
+    Point orient = ped.Orientation;
     if(orient.Norm() < 1e-9) {
         orient = Point{1.0, 0.0};
     } else {
@@ -409,10 +409,10 @@ OperationalModelUpdate WarpDriverModel::ComputeNewPosition(
     }
 
     // Direction towards destination
-    Point toTarget = ped.destination - ped.pos;
+    Point toTarget = ped.Destination - ped.Pos;
     const double distToTarget = toTarget.Norm();
     if(distToTarget < 1e-9) {
-        return WarpDriverModelUpdate{ped.pos, orient};
+        return WarpDriverModelUpdate{ped.Pos, orient};
     }
     Point desiredDir = toTarget.Normalized();
 
@@ -421,10 +421,10 @@ OperationalModelUpdate WarpDriverModel::ComputeNewPosition(
 
     // === Step 1: Projected trajectory in agent-centric space ===
     // r(t) = (speed * t, 0, t) for t in [0, timeHorizon]
-    const double dtSample = _timeHorizon / std::max(_numSamples - 1, 1);
+    const double dtSample = timeHorizon / std::max(numSamples - 1, 1);
 
     // === Step 2: Perceive - build collision probability field ===
-    const auto neighbors = neighborhoodSearch.GetNeighboringAgents(ped.pos, _cutOffRadius);
+    const auto neighbors = neighborhoodSearch.GetNeighboringAgents(ped.Pos, cutOffRadius);
 
     // Short-range repulsion: not part of the original Wolinski et al. (2016)
     // model, which is purely anticipatory. Added as a practical safety net
@@ -433,21 +433,21 @@ OperationalModelUpdate WarpDriverModel::ComputeNewPosition(
     // Similar to the pushout mechanisms in CFS and AVM.
     Point repulsion{0.0, 0.0};
     for(const auto& neighbor : neighbors) {
-        if(neighbor.id == ped.id) {
+        if(neighbor.AgentID == ped.AgentID) {
             continue;
         }
-        const auto* nbData = std::get_if<WarpDriverModelData>(&neighbor.model);
+        const auto* nbData = std::get_if<WarpDriverModelData>(&neighbor.Model);
         if(!nbData) {
             continue;
         }
-        Point diff = ped.pos - neighbor.pos;
+        Point diff = ped.Pos - neighbor.Pos;
         const double dist = diff.Norm();
-        const double combinedRadius = agentData.radius + nbData->radius;
+        const double combinedRadius = agentData.Radius + nbData->Radius;
         if(dist < combinedRadius * 3.0 && dist > 1e-6) {
             const double overlap = combinedRadius * 3.0 - dist;
             repulsion = repulsion + diff.Normalized() * (speed * overlap / dist);
         } else if(dist <= 1e-6) {
-            repulsion = repulsion + Point{-desiredDir.y, desiredDir.x} * speed;
+            repulsion = repulsion + Point{-desiredDir.Y, desiredDir.X} * speed;
         }
     }
 
@@ -458,32 +458,32 @@ OperationalModelUpdate WarpDriverModel::ComputeNewPosition(
 
     // Storage for per-sample combined probability and gradient
     struct Sample {
-        double t;
-        STP r; // trajectory point in agent-centric space-time
-        double pTotal;
-        STP gradTotal;
+        double T;
+        STP R; // trajectory point in agent-centric space-time
+        double PTotal;
+        STP GradTotal;
     };
-    std::vector<Sample> samples(static_cast<size_t>(_numSamples));
+    std::vector<Sample> samples(static_cast<size_t>(numSamples));
 
-    for(int i = 0; i < _numSamples; ++i) {
+    for(int i = 0; i < numSamples; ++i) {
         const double t = i * dtSample;
-        const double lateralPerturbation = perturbDist(_rng);
+        const double lateralPerturbation = perturbDist(rng);
         samples[static_cast<size_t>(i)] =
             Sample{t, STP{speed * t, lateralPerturbation, t}, 0.0, STP{0, 0, 0}};
     }
 
     for(const auto& neighbor : neighbors) {
-        if(neighbor.id == ped.id) {
+        if(neighbor.AgentID == ped.AgentID) {
             continue;
         }
 
-        const auto* nbData = std::get_if<WarpDriverModelData>(&neighbor.model);
+        const auto* nbData = std::get_if<WarpDriverModelData>(&neighbor.Model);
         if(!nbData) {
             continue;
         }
 
         // Neighbor orientation
-        Point nbOrient = neighbor.orientation;
+        Point nbOrient = neighbor.Orientation;
         if(nbOrient.Norm() < 1e-9) {
             nbOrient = Point{1.0, 0.0};
         } else {
@@ -491,50 +491,50 @@ OperationalModelUpdate WarpDriverModel::ComputeNewPosition(
         }
 
         // Neighbor speed (from v0)
-        const double nbSpeed = nbData->v0;
+        const double nbSpeed = nbData->V0;
 
         // TODO(perf): WarpParams and all neighbor-derived constants (orientation,
         // speed, Minkowski radius, rotation matrix cos_ab/sin_ab used in the
         // gradient inverse) are loop-invariant w.r.t. the sample index. Hoist
         // them out of the sample loop and precompute once per (ped, neighbor).
         WarpParams wp{};
-        wp.posA = ped.pos;
-        wp.orientA = effectiveOrient;
-        wp.posB = neighbor.pos;
-        wp.orientB = nbOrient;
-        wp.speedB = nbSpeed;
-        wp.radiusB = agentData.radius + nbData->radius; // Minkowski sum
-        wp.lambda = _timeUncertainty;
-        wp.velocityUncertaintyX = _velocityUncertaintyX;
-        wp.velocityUncertaintyY = _velocityUncertaintyY;
-        wp.timeHorizon = _timeHorizon;
+        wp.PosA = ped.Pos;
+        wp.OrientA = effectiveOrient;
+        wp.PosB = neighbor.Pos;
+        wp.OrientB = nbOrient;
+        wp.SpeedB = nbSpeed;
+        wp.RadiusB = agentData.Radius + nbData->Radius; // Minkowski sum
+        wp.Lambda = timeUncertainty;
+        wp.VelocityUncertaintyX = velocityUncertaintyX;
+        wp.VelocityUncertaintyY = velocityUncertaintyY;
+        wp.TimeHorizon = timeHorizon;
 
         for(auto& s : samples) {
             // Forward warp sample point to neighbor's Intrinsic Field space
-            STP warped = ComposeForward(s.r, wp);
+            STP warped = ComposeForward(s.R, wp);
 
             // Time validity check: must be in [0, 1] (normalized)
-            if(warped.t < 0.0 || warped.t > 1.0) {
+            if(warped.T < 0.0 || warped.T > 1.0) {
                 continue;
             }
 
             // Lookup Intrinsic Field (2D) and apply probability scaling (B.5, B.14)
-            auto [intrinsicP, gradI] = _intrinsicField.Sample(warped.x, warped.y);
-            const double pB = intrinsicP * ProbabilityScale(s.r, wp);
+            auto [intrinsicP, gradI] = intrinsicField.Sample(warped.X, warped.Y);
+            const double pB = intrinsicP * ProbabilityScale(s.R, wp);
 
             if(pB < 1e-12) {
                 continue;
             }
 
             // Transform gradient back to agent's frame
-            STP gradB = ComposeGradientInverse(gradI, s.r, wp);
+            STP gradB = ComposeGradientInverse(gradI, s.R, wp);
 
             // Union formula: p_new = p + pB - p * pB
-            double pOld = s.pTotal;
-            s.pTotal = pOld + pB - pOld * pB;
-            s.gradTotal.x = s.gradTotal.x + gradB.x - pOld * gradB.x - pB * s.gradTotal.x;
-            s.gradTotal.y = s.gradTotal.y + gradB.y - pOld * gradB.y - pB * s.gradTotal.y;
-            s.gradTotal.t = s.gradTotal.t + gradB.t - pOld * gradB.t - pB * s.gradTotal.t;
+            double pOld = s.PTotal;
+            s.PTotal = pOld + pB - pOld * pB;
+            s.GradTotal.X = s.GradTotal.X + gradB.X - pOld * gradB.X - pB * s.GradTotal.X;
+            s.GradTotal.Y = s.GradTotal.Y + gradB.Y - pOld * gradB.Y - pB * s.GradTotal.Y;
+            s.GradTotal.T = s.GradTotal.T + gradB.T - pOld * gradB.T - pB * s.GradTotal.T;
         }
     }
 
@@ -546,14 +546,14 @@ OperationalModelUpdate WarpDriverModel::ComputeNewPosition(
     STP S{0, 0, 0};
 
     for(const auto& s : samples) {
-        N += s.pTotal * dtSample;
-        P += s.pTotal * s.pTotal * dtSample;
-        G.x += s.pTotal * s.gradTotal.x * dtSample;
-        G.y += s.pTotal * s.gradTotal.y * dtSample;
-        G.t += s.pTotal * s.gradTotal.t * dtSample;
-        S.x += s.pTotal * s.r.x * dtSample;
-        S.y += s.pTotal * s.r.y * dtSample;
-        S.t += s.pTotal * s.r.t * dtSample;
+        N += s.PTotal * dtSample;
+        P += s.PTotal * s.PTotal * dtSample;
+        G.X += s.PTotal * s.GradTotal.X * dtSample;
+        G.Y += s.PTotal * s.GradTotal.Y * dtSample;
+        G.T += s.PTotal * s.GradTotal.T * dtSample;
+        S.X += s.PTotal * s.R.X * dtSample;
+        S.Y += s.PTotal * s.R.Y * dtSample;
+        S.T += s.PTotal * s.R.T * dtSample;
     }
 
     Point newVelLocal;
@@ -563,28 +563,28 @@ OperationalModelUpdate WarpDriverModel::ComputeNewPosition(
         newVelLocal = Point{speed, 0.0};
     } else {
         P /= N;
-        G.x /= N;
-        G.y /= N;
-        G.t /= N;
-        S.x /= N;
-        S.y /= N;
-        S.t /= N;
+        G.X /= N;
+        G.Y /= N;
+        G.T /= N;
+        S.X /= N;
+        S.Y /= N;
+        S.T /= N;
 
         // q = S - alpha * P * G  (Eq. 8)
         STP q{};
-        q.x = S.x - _stepSize * P * G.x;
-        q.y = S.y - _stepSize * P * G.y;
-        q.t = S.t - _stepSize * P * G.t;
+        q.X = S.X - stepSize * P * G.X;
+        q.Y = S.Y - stepSize * P * G.Y;
+        q.T = S.T - stepSize * P * G.T;
 
-        if(q.t > 1e-9) {
-            newVelLocal = Point{q.x / q.t, q.y / q.t};
+        if(q.T > 1e-9) {
+            newVelLocal = Point{q.X / q.T, q.Y / q.T};
         } else {
             newVelLocal = Point{speed, 0.0};
         }
     }
 
     // Clamp speed to [0, v0]
-    const double newSpeed = std::min(newVelLocal.Norm(), agentData.v0);
+    const double newSpeed = std::min(newVelLocal.Norm(), agentData.V0);
 
     // Convert to world coordinates: rotate by effectiveOrient
     Point newVelWorld;
@@ -593,76 +593,76 @@ OperationalModelUpdate WarpDriverModel::ComputeNewPosition(
         // Rotate from agent-centric to world
         newVelWorld =
             Point{
-                effectiveOrient.x * newDirLocal.x - effectiveOrient.y * newDirLocal.y,
-                effectiveOrient.y * newDirLocal.x + effectiveOrient.x * newDirLocal.y} *
+                effectiveOrient.X * newDirLocal.X - effectiveOrient.Y * newDirLocal.Y,
+                effectiveOrient.Y * newDirLocal.X + effectiveOrient.X * newDirLocal.Y} *
             newSpeed;
     } else {
-        newVelWorld = desiredDir * agentData.v0 * 0.01; // tiny push towards goal
+        newVelWorld = desiredDir * agentData.V0 * 0.01; // tiny push towards goal
     }
 
     // Agent repulsion
     newVelWorld = newVelWorld + repulsion;
 
     // Boundary avoidance: steer agents away from walls
-    const auto& walls = geometry.LineSegmentsInApproxDistanceTo(ped.pos);
+    const auto& walls = geometry.LineSegmentsInApproxDistanceTo(ped.Pos);
     for(const auto& wall : walls) {
-        const Point wallVec = wall.p2 - wall.p1;
+        const Point wallVec = wall.P2 - wall.P1;
         const double wallLen2 = wallVec.ScalarProduct(wallVec);
         if(wallLen2 < 1e-12) {
             continue; // degenerate wall segment
         }
-        const Point toAgent = ped.pos - wall.p1;
+        const Point toAgent = ped.Pos - wall.P1;
         const double t = std::clamp(toAgent.ScalarProduct(wallVec) / wallLen2, 0.0, 1.0);
-        const Point closest = wall.p1 + wallVec * t;
-        const Point diff = ped.pos - closest;
+        const Point closest = wall.P1 + wallVec * t;
+        const Point diff = ped.Pos - closest;
         const double dist = diff.Norm();
-        if(dist < agentData.radius * 3.0 && dist > 1e-6) {
-            const double steering = agentData.v0 * (agentData.radius * 3.0 - dist) / dist;
+        if(dist < agentData.Radius * 3.0 && dist > 1e-6) {
+            const double steering = agentData.V0 * (agentData.Radius * 3.0 - dist) / dist;
             newVelWorld = newVelWorld + diff.Normalized() * steering;
         }
     }
 
     // Re-clamp speed to v0 after wall steering
     double finalSpeed = newVelWorld.Norm();
-    if(finalSpeed > agentData.v0 && finalSpeed > 1e-9) {
-        newVelWorld = newVelWorld * (agentData.v0 / finalSpeed);
-        finalSpeed = agentData.v0;
+    if(finalSpeed > agentData.V0 && finalSpeed > 1e-9) {
+        newVelWorld = newVelWorld * (agentData.V0 / finalSpeed);
+        finalSpeed = agentData.V0;
     }
 
     // Stuck detection: measure net displacement from an anchor position over a
     // time window. Catches oscillating agents that periodically spike above the
     // speed threshold but make no real progress.
-    double stuckTime = agentData.stuckTime;
-    double anchorX = agentData.anchorX;
-    double anchorY = agentData.anchorY;
-    double detourTime = agentData.detourTime;
-    int detourSide = agentData.detourSide;
+    double stuckTime = agentData.StuckTime;
+    double anchorX = agentData.AnchorX;
+    double anchorY = agentData.AnchorY;
+    double detourTime = agentData.DetourTime;
+    int detourSide = agentData.DetourSide;
 
     // Detour mode: agent is currently on a lateral detour to break a deadlock
     if(detourTime > 0.0) {
         detourTime -= dT;
-        Point lateral{-desiredDir.y * detourSide, desiredDir.x * detourSide};
+        Point lateral{-desiredDir.Y * detourSide, desiredDir.X * detourSide};
         Point detourDir = (lateral * 0.8 + desiredDir * 0.2).Normalized();
-        Point detourVel = detourDir * agentData.v0 * 0.5;
-        Point newPos = ped.pos + detourVel * dT;
+        Point detourVel = detourDir * agentData.V0 * 0.5;
+        Point newPos = ped.Pos + detourVel * dT;
         // If detour would leave the walkable area, try the other side
         if(!geometry.InsideGeometry(newPos)) {
             detourSide = -detourSide;
-            lateral = Point{-desiredDir.y * detourSide, desiredDir.x * detourSide};
+            lateral = Point{-desiredDir.Y * detourSide, desiredDir.X * detourSide};
             detourDir = (lateral * 0.8 + desiredDir * 0.2).Normalized();
-            detourVel = detourDir * agentData.v0 * 0.5;
-            newPos = ped.pos + detourVel * dT;
+            detourVel = detourDir * agentData.V0 * 0.5;
+            newPos = ped.Pos + detourVel * dT;
             // If both sides fail, just creep toward goal
             if(!geometry.InsideGeometry(newPos)) {
-                newPos = ped.pos + desiredDir * agentData.v0 * 0.1 * dT;
+                newPos = ped.Pos + desiredDir * agentData.V0 * 0.1 * dT;
                 detourDir = desiredDir;
             }
         }
         if(detourTime <= 0.0) {
             detourTime = 0.0;
             stuckTime = 0.0;
-            anchorX = newPos.x;
-            anchorY = newPos.y;
+            anchorX = newPos.X;
+            anchorY = newPos.Y;
         }
         return WarpDriverModelUpdate{
             newPos, detourDir, stuckTime, anchorX, anchorY, detourTime, detourSide};
@@ -674,17 +674,17 @@ OperationalModelUpdate WarpDriverModel::ComputeNewPosition(
     constexpr double progressRadius = 0.3; // must move this far from anchor to count as progress
 
     stuckTime += dT;
-    const double netDisplacement = std::hypot(ped.pos.x - anchorX, ped.pos.y - anchorY);
+    const double netDisplacement = std::hypot(ped.Pos.X - anchorX, ped.Pos.Y - anchorY);
 
     if(netDisplacement > progressRadius) {
         // Real progress — reset anchor to current position
         stuckTime = 0.0;
-        anchorX = ped.pos.x;
-        anchorY = ped.pos.y;
+        anchorX = ped.Pos.X;
+        anchorY = ped.Pos.Y;
     } else if(stuckTime >= stuckThreshold) {
         // Stuck: no net progress for stuckThreshold seconds — enter detour
         std::uniform_int_distribution<int> sideDist(0, 1);
-        detourSide = sideDist(_rng) * 2 - 1; // -1 or +1
+        detourSide = sideDist(rng) * 2 - 1; // -1 or +1
         detourTime = detourDuration;
         stuckTime = 0.0;
     }
@@ -694,11 +694,11 @@ OperationalModelUpdate WarpDriverModel::ComputeNewPosition(
     const double smoothing = 0.5; // weight of new velocity (1.0 = no smoothing)
     Point smoothedVel = newVelWorld * smoothing + orient * (newVelWorld.Norm() * (1.0 - smoothing));
     double smoothedSpeed = smoothedVel.Norm();
-    if(smoothedSpeed > agentData.v0 && smoothedSpeed > 1e-9) {
-        smoothedVel = smoothedVel * (agentData.v0 / smoothedSpeed);
+    if(smoothedSpeed > agentData.V0 && smoothedSpeed > 1e-9) {
+        smoothedVel = smoothedVel * (agentData.V0 / smoothedSpeed);
     }
 
-    Point newPos = ped.pos + smoothedVel * dT;
+    Point newPos = ped.Pos + smoothedVel * dT;
     Point newOrient = (smoothedVel.Norm() > 1e-9) ? smoothedVel.Normalized() : orient;
 
     return WarpDriverModelUpdate{

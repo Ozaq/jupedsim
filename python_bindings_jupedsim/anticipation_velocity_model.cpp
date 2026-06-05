@@ -32,14 +32,14 @@ void init_anticipation_velocity_model(py::module_& m)
                         double desiredSpeed,
                         double radius) {
                 return AnticipationVelocityModelData{
-                    .strengthNeighborRepulsion = strengthNeighborRepulsion,
-                    .rangeNeighborRepulsion = rangeNeighborRepulsion,
-                    .wallBufferDistance = wallBufferDistance,
-                    .anticipationTime = anticipationTime,
-                    .reactionTime = reactionTime,
-                    .timeGap = timeGap,
-                    .v0 = desiredSpeed,
-                    .radius = radius};
+                    .StrengthNeighborRepulsion = strengthNeighborRepulsion,
+                    .RangeNeighborRepulsion = rangeNeighborRepulsion,
+                    .WallBufferDistance = wallBufferDistance,
+                    .AnticipationTime = anticipationTime,
+                    .ReactionTime = reactionTime,
+                    .TimeGap = timeGap,
+                    .V0 = desiredSpeed,
+                    .Radius = radius};
             }),
             py::kw_only(),
             py::arg("strength_neighbor_repulsion"),
@@ -52,14 +52,14 @@ void init_anticipation_velocity_model(py::module_& m)
             py::arg("radius"))
         .def_readwrite(
             "strength_neighbor_repulsion",
-            &AnticipationVelocityModelData::strengthNeighborRepulsion)
+            &AnticipationVelocityModelData::StrengthNeighborRepulsion)
         .def_readwrite(
-            "range_neighbor_repulsion", &AnticipationVelocityModelData::rangeNeighborRepulsion)
-        .def_readwrite("wall_buffer_distance", &AnticipationVelocityModelData::wallBufferDistance)
-        .def_readwrite("anticipation_time", &AnticipationVelocityModelData::anticipationTime)
-        .def_readwrite("reaction_time", &AnticipationVelocityModelData::reactionTime)
-        .def_readwrite("velocity", &AnticipationVelocityModelData::velocity)
-        .def_readwrite("time_gap", &AnticipationVelocityModelData::timeGap)
-        .def_readwrite("desired_speed", &AnticipationVelocityModelData::v0)
-        .def_readwrite("radius", &AnticipationVelocityModelData::radius);
+            "range_neighbor_repulsion", &AnticipationVelocityModelData::RangeNeighborRepulsion)
+        .def_readwrite("wall_buffer_distance", &AnticipationVelocityModelData::WallBufferDistance)
+        .def_readwrite("anticipation_time", &AnticipationVelocityModelData::AnticipationTime)
+        .def_readwrite("reaction_time", &AnticipationVelocityModelData::ReactionTime)
+        .def_readwrite("velocity", &AnticipationVelocityModelData::Velocity)
+        .def_readwrite("time_gap", &AnticipationVelocityModelData::TimeGap)
+        .def_readwrite("desired_speed", &AnticipationVelocityModelData::V0)
+        .def_readwrite("radius", &AnticipationVelocityModelData::Radius);
 }
