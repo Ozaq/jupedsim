@@ -9,8 +9,8 @@ target_sources(simulator PRIVATE
     src/AABB.cpp
     src/AABB.hpp
     src/AgentRemovalSystem.hpp
-    src/Clonable.hpp
     src/CfgCgal.hpp
+    src/Clonable.hpp
     src/CollisionGeometry.cpp
     src/CollisionGeometry.hpp
     src/Ellipse.cpp
@@ -21,7 +21,6 @@ target_sources(simulator PRIVATE
     src/GeometryBuilder.hpp
     src/GeometrySwitchError.hpp
     src/Graph.hpp
-    src/Grid2D.hpp
     src/HashCombine.hpp
     src/IteratorPair.hpp
     src/Journey.cpp
@@ -64,6 +63,7 @@ target_sources(simulator PRIVATE
     src/Timing.hpp
     src/Tracing.cpp
     src/Tracing.hpp
+    src/UniformGrid.hpp
     src/UniqueID.hpp
     src/Util.hpp
 )
