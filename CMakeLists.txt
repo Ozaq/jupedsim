@@ -53,7 +53,7 @@ print_var(WITH_FORMAT)
 if(WITH_FORMAT AND ${CMAKE_SYSTEM} MATCHES "Windows")
     message(FATAL_ERROR "Format target not supported on Windows")
 endif()
-
+option(WITH_TOOLS "Enable compilation of development tools" OFF)
 ################################################################################
 # Compilation flags
 ################################################################################
@@ -279,9 +279,15 @@ if(UNIX AND WITH_FORMAT)
 endif()
 
 ################################################################################
+# Development Tools
+################################################################################
+if(WITH_TOOLS)
+    add_subdirectory(tools)
+endif(WITH_TOOLS)
+################################################################################
 # Integration tests
 ################################################################################
 if (BUILD_TESTS)
-  # Find libraries needed by python tests
-  find_python_library(pytest)
+    # Find libraries needed by python tests
+    find_python_library(pytest)
 endif (BUILD_TESTS)
