@@ -10,6 +10,7 @@
 #include "SocialForceModelData.hpp"
 #include "UniqueID.hpp"
 #include "WarpDriverModelData.hpp"
+#include "OperationalModels/UserDefinedModel/UserDefinedModelData.hpp"
 
 #include <fmt/core.h>
 
@@ -41,7 +42,8 @@ struct GenericAgent {
         CollisionFreeSpeedModelV3Data,
         AnticipationVelocityModelData,
         SocialForceModelData,
-        WarpDriverModelData>;
+        WarpDriverModelData,
+        UserDefinedModelData>;
     Model model{};
 
     GenericAgent(
