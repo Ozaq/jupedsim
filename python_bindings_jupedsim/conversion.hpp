@@ -3,7 +3,9 @@
 
 #include <Point.hpp>
 
+#include <iterator>
 #include <tuple>
+#include <type_traits>
 #include <vector>
 
 std::tuple<double, double> intoTuple(const Point& p);
@@ -19,10 +21,21 @@ std::vector<std::tuple<double, double>> intoTuples(const auto& in)
     return tuples;
 }
 
-
 Point intoPoint(const std::tuple<double, double>& p);
 
 std::vector<Point> intoPoints(const std::vector<std::tuple<double, double>>& in);
+
+template <typename Range>
+auto intoVec(Range&& range)
+{
+    using Value = std::remove_cvref_t<decltype(*std::begin(range))>;
+
+    std::vector<Value> result{};
+    for(auto&& value : range) {
+        result.emplace_back(value);
+    }
+    return result;
+}
 
 template <typename T, typename U>
 std::vector<T> intoVecT(const std::vector<U>& vec)
