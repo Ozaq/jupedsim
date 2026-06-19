@@ -6,11 +6,11 @@
 #include "CollisionFreeSpeedModelV3Data.hpp"
 #include "GeneralizedCentrifugalForceModelData.hpp"
 #include "OperationalModel.hpp"
+#include "OperationalModels/UserDefinedModel/UserDefinedModelData.hpp"
 #include "Point.hpp"
 #include "SocialForceModelData.hpp"
 #include "UniqueID.hpp"
 #include "WarpDriverModelData.hpp"
-#include "OperationalModels/UserDefinedModel/UserDefinedModelData.hpp"
 
 #include <fmt/core.h>
 

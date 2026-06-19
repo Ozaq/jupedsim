@@ -21,6 +21,7 @@ void init_transition(py::module_& m);
 void init_journey(py::module_& m);
 void init_stage(py::module_& m);
 void init_simulation(py::module_& m);
+void init_python_model(py::module_& m);
 void init_neighborhood_search(py::module_& m);
 void init_linesegment(py::module_& m);
 
@@ -30,6 +31,7 @@ PYBIND11_MODULE(py_jupedsim, m)
     init_build_info(m);
     init_journey(m);
     init_trace(m);
+    init_python_model(m); // Must be first to define OperationalModel base class
     init_generalized_centrifugal_force_model(m);
     init_collision_free_speed_model(m);
     init_collision_free_speed_model_v2(m);
