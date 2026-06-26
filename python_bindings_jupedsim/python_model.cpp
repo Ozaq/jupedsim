@@ -155,10 +155,6 @@ void PythonModel::ApplyUpdate(const OperationalModelUpdate& update, GenericAgent
 
     agent.pos = requiredPosition(pythonUpdate);
 
-    if(auto orientation = optionalPointAttribute(pythonUpdate, "orientation")) {
-        agent.orientation = *orientation;
-    }
-
     auto model = requireAttribute(pythonUpdate, "model");
     if(model.is_none()) {
         throw SimulationError("PythonModelData may not a python  'None'");
