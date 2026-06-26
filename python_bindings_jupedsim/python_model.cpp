@@ -159,14 +159,17 @@ void PythonModel::ApplyUpdate(const OperationalModelUpdate& update, GenericAgent
     if(model.is_none()) {
         throw SimulationError("PythonModelData may not a python  'None'");
     }
-    try {
-        auto& state = std::get<CustomModelData>(agent.model).Get<GilSafePyObject>();
-        state.Set(std::move(model));
-    } catch(const std::bad_variant_access&) {
-        throw SimulationError(
-            "Custom Python model tried to update an agent with non-custom model data");
-    } catch(const std::bad_any_cast&) {
-        throw SimulationError("Custom Python model data does not contain a Python model object");
+    if(!py::hasattr(pythonUpdate, "__dict__")) {
+        throw SimulationError("TODO");
+    }
+    auto updateFields = pythonUpdate.attr("__dict__").cast<py::dict>();
+    for(auto [name, value] : updateFields) {
+        if(name.cast<std::string>().compare("position") == 0) {
+            continue;
+        }
+        if(!py::hasattr(model, name))
+            throw SimulationError("data missing expected field: {}", name.cast<std::string>());
+        model.attr(name) = value;
     }
 }
 
