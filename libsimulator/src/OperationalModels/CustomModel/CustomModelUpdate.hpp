@@ -7,9 +7,6 @@
 #include <type_traits>
 #include <utility>
 
-struct CustomModelUpdateTag {
-};
-
 /// Type-erased update payload for CustomModel implementations.
 ///
 /// CustomModelUpdate is returned from CustomModel::ComputeNewPosition and later consumed by

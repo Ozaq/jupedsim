@@ -177,6 +177,6 @@ TEST(CustomModel, RunsThroughOperationalDecisionSystem)
     const auto& agent = agents.front();
     const auto& state = std::get<CustomModelData>(agent.model).Get<MinimalState>();
     ASSERT_EQ(agent.pos, Point(1.0, 0.0));
-    ASSERT_EQ(agent.orientation, Point(1.0, 0.0));
+    ASSERT_EQ(state.orientation, Point(1.0, 0.0));
     ASSERT_EQ(state.applications, 1);
 }

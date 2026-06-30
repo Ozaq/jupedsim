@@ -7,9 +7,6 @@
 #include <type_traits>
 #include <utility>
 
-struct CustomModelDataTag {
-};
-
 /// Type-erased per-agent state for CustomModel implementations.
 ///
 /// CustomModelData lets a custom operational model store model-specific state in
