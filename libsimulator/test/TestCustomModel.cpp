@@ -21,6 +21,7 @@ namespace
 struct MinimalState {
     Point velocity{};
     int applications{};
+    Point orientation{};
 };
 
 struct MinimalUpdate {
@@ -64,7 +65,7 @@ public:
         auto& state = std::get<CustomModelData>(agent.model).Get<MinimalState>();
 
         agent.pos = customUpdate.position;
-        agent.orientation = customUpdate.orientation;
+        state.orientation = customUpdate.orientation;
         state.velocity = customUpdate.velocity;
         state.applications = customUpdate.applications;
     }

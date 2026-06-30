@@ -7,6 +7,9 @@
 #include <type_traits>
 #include <utility>
 
+struct CustomModelDataTag {
+};
+
 /// Type-erased per-agent state for CustomModel implementations.
 ///
 /// CustomModelData lets a custom operational model store model-specific state in
@@ -24,52 +27,4 @@
 /// provides a public ToString() callable on const T& and returning std::string, std::string_view,
 /// or const char*, ToString() is used. If neither is available, formatting falls back to a
 /// diagnostic <type@address> representation.
-class CustomModelData
-{
-private:
-    std::any value{};
-    FormatFn format{};
-
-public:
-    template <typename T>
-        requires(!std::is_same_v<std::decay_t<T>, CustomModelData>)
-    CustomModelData(T&& value) : value(std::forward<T>(value)), format(makeFormatFn<T>())
-    {
-        using Stored = std::decay_t<T>;
-        static_assert(
-            std::is_copy_constructible_v<Stored>,
-            "CustomModelData payloads must be copy-constructible");
-    }
-
-    template <typename T>
-    T& Get()
-    {
-        return std::any_cast<T&>(value);
-    }
-
-    template <typename T>
-    const T& Get() const
-    {
-        return std::any_cast<const T&>(value);
-    }
-
-    template <typename T>
-    void Set(T&& newValue)
-    {
-        using Stored = std::decay_t<T>;
-        std::any_cast<Stored&>(value) = std::forward<T>(newValue);
-    }
-
-    friend struct fmt::formatter<CustomModelData>;
-};
-
-template <>
-struct fmt::formatter<CustomModelData> {
-
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-
-    auto format(const CustomModelData& value, fmt::format_context& ctx) const
-    {
-        return value.format(value.value, ctx);
-    }
-};
+using CustomModelData = AnyHolder<struct CustomModelDataTag>;

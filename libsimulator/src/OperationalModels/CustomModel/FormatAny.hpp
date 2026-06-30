@@ -29,7 +29,7 @@ template <typename T>
 auto makeFormatFn()
 {
     using Stored = std::decay_t<T>;
-    if constexpr(fmt::is_formattable<Stored, char>::value) {
+    if constexpr(fmt::formattable<Stored, char>) {
         return [](const std::any& any, fmt::format_context& ctx) {
             return fmt::format_to(ctx.out(), "{}", std::any_cast<const Stored&>(any));
         };
@@ -46,3 +46,51 @@ auto makeFormatFn()
         };
     }
 }
+template <typename Tag>
+class AnyHolder
+{
+private:
+    std::any value{};
+    FormatFn format{};
+
+public:
+    template <typename T>
+        requires(!std::is_same_v<std::decay_t<T>, AnyHolder>)
+    AnyHolder(T&& value) : value(std::forward<T>(value)), format(makeFormatFn<T>())
+    {
+        using Stored = std::decay_t<T>;
+        static_assert(
+            std::is_copy_constructible_v<Stored>, "AnyHolder payloads must be copy-constructible");
+    }
+
+    template <typename T>
+    T& Get()
+    {
+        return std::any_cast<T&>(value);
+    }
+
+    template <typename T>
+    const T& Get() const
+    {
+        return std::any_cast<const T&>(value);
+    }
+
+    template <typename T>
+    void Set(T&& newValue)
+    {
+        using Stored = std::decay_t<T>;
+        std::any_cast<Stored&>(value) = std::forward<T>(newValue);
+    }
+
+    friend struct fmt::formatter<AnyHolder>;
+};
+
+template <typename Tag>
+struct fmt::formatter<AnyHolder<Tag>> {
+    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+
+    auto format(const AnyHolder<Tag>& value, fmt::format_context& ctx) const
+    {
+        return value.format(value.value, ctx);
+    }
+};
