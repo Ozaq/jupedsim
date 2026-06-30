@@ -24,4 +24,5 @@
 /// provides a public ToString() callable on const T& and returning std::string, std::string_view,
 /// or const char*, ToString() is used. If neither is available, formatting falls back to a
 /// diagnostic <type@address> representation.
-using CustomModelData = AnyHolder<struct CustomModelDataTag>;
+struct CustomModelDataTag;
+using CustomModelData = AnyHolder<CustomModelDataTag>;

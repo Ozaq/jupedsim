@@ -21,4 +21,5 @@
 /// Formatting follows the same rules as CustomModelData: fmt formatter first, then public
 /// const-callable ToString() returning std::string, std::string_view, or const char*, then a
 /// diagnostic <type@address> fallback.
-using CustomModelUpdate = AnyHolder<struct CustomModelUpdateTag>;
+struct CustomModelUpdateTag;
+using CustomModelUpdate = AnyHolder<CustomModelUpdateTag>;
