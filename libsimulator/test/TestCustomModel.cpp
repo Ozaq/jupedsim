@@ -85,7 +85,6 @@ GenericAgent MakeAgent(GenericAgent::Model model)
         jps::UniqueID<Journey>::Invalid,
         jps::UniqueID<BaseStage>::Invalid,
         Point{0.0, 0.0},
-        Point{1.0, 0.0},
         std::move(model));
 }
 } // namespace
