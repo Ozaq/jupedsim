@@ -28,6 +28,7 @@ from jupedsim.models.collision_free_speed_v3 import (
 )
 from jupedsim.models.custom_model import (
     CustomModelAgentParameters,
+    CustomModelAgentState,
     CustomOperationalModel,
 )
 from jupedsim.models.generalized_centrifugal_force import (
@@ -385,10 +386,19 @@ class Simulation:
                 desired_speed=parameters.desired_speed,
                 radius=parameters.radius,
             )
-        elif isinstance(parameters, CustomModelAgentParameters) or issubclass(
-            type(parameters), CustomModelAgentParameters
-        ):
-            model = py_jps._CustomModelData(parameters.model)
+        elif isinstance(parameters, CustomModelAgentParameters):
+            if not isinstance(parameters.model, CustomModelAgentState):
+                raise TypeError(
+                    "CustomModelAgentParameters.model must be set to an object "
+                    "satisfying CustomModelAgentState (it needs a `position`)."
+                )
+            agent = py_jps.Agent(
+                journey_id=parameters.journey_id,
+                stage_id=parameters.stage_id,
+                position=parameters.model.position,
+                model=py_jps._CustomModelData(parameters.model),
+            )
+            return self._obj.add_agent(agent)
 
         agent = py_jps.Agent(
             journey_id=parameters.journey_id,

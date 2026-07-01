@@ -13,12 +13,9 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
-#include <any>
-#include <optional>
 #include <stdexcept>
 #include <tuple>
 #include <utility>
-#include <variant>
 
 namespace py = pybind11;
 
@@ -32,30 +29,6 @@ Point requiredPosition(py::handle object)
         throw SimulationError("Missing attribute '{}'.", attribute);
     }
     return intoPoint(py::cast<std::tuple<double, double>>(object.attr(attribute)));
-}
-
-py::object requireAttribute(py::handle object, const char* attribute)
-{
-    if(!py::hasattr(object, attribute)) {
-        throw SimulationError(
-            "CustomModelAgentUpdate returned by compute_new_position() is missing '{}'", attribute);
-    }
-    return object.attr(attribute);
-}
-
-std::optional<Point> optionalPointAttribute(py::handle update, const char* attribute)
-{
-    auto value = requireAttribute(update, attribute);
-    if(value.is_none()) {
-        return std::nullopt;
-    }
-
-    try {
-        return intoPoint(py::cast<std::tuple<double, double>>(value));
-    } catch(const py::cast_error&) {
-        throw SimulationError(
-            "CustomModelAgentUpdate.{} must be None or tuple[float, float]", attribute);
-    }
 }
 
 } // namespace
@@ -141,7 +114,7 @@ OperationalModelUpdate PythonModel::ComputeNewPosition(
         const_cast<NeighborhoodSearch<GenericAgent>*>(&neighborhoodSearch),
         py::return_value_policy::reference);
 
-    py::object update = _model.attr("compute_new_position")(
+    py::object update = _model.attr("_compute_new_position")(
         dT, pythonAgent, pythonGeometry, pythonNeighborhoodSearch);
 
     return CustomModelUpdate{GilSafePyObject{std::move(update)}};
@@ -152,25 +125,12 @@ void PythonModel::ApplyUpdate(const OperationalModelUpdate& update, GenericAgent
     py::gil_scoped_acquire gil;
 
     const auto& pythonUpdate = std::get<CustomModelUpdate>(update).Get<GilSafePyObject>().Get();
-
+    auto& customModelData = std::get<CustomModelData>(agent.model).Get<GilSafePyObject>();
+    if(pythonUpdate.is(customModelData.Get())) {
+        throw SimulationError("ModelData and ModelUpdate may not be the same instance.");
+    }
     agent.pos = requiredPosition(pythonUpdate);
-
-    auto model = requireAttribute(pythonUpdate, "model");
-    if(model.is_none()) {
-        throw SimulationError("PythonModelData may not a python  'None'");
-    }
-    if(!py::hasattr(pythonUpdate, "__dict__")) {
-        throw SimulationError("TODO");
-    }
-    auto updateFields = pythonUpdate.attr("__dict__").cast<py::dict>();
-    for(auto [name, value] : updateFields) {
-        if(name.cast<std::string>().compare("position") == 0) {
-            continue;
-        }
-        if(!py::hasattr(model, name))
-            throw SimulationError("data missing expected field: {}", name.cast<std::string>());
-        model.attr(name) = value;
-    }
+    customModelData.Set(pythonUpdate);
 }
 
 void PythonModel::CheckModelConstraint(
@@ -191,14 +151,14 @@ void PythonModel::CheckModelConstraint(
 
 void init_python_model(py::module_& m)
 {
-    py::class_<OperationalModel, py::smart_holder>(m, "_OperationalModel");
+    py::class_<OperationalModel, py::smart_holder>(m, "OperationalModel");
 
-    // py::class_<CustomModelData>(m, "_CustomModelData")
-    //     .def(py::init([](py::object model) {
-    //         return CustomModelData{GilSafePyObject{std::move(model)}};
-    //     }))
-    //     .def_property_readonly(
-    //         "model", [](CustomModelData& data) { return data.Get<GilSafePyObject>().Get(); });
+    py::class_<CustomModelData>(m, "_CustomModelData")
+        .def(py::init([](py::object model) {
+            return CustomModelData{GilSafePyObject{std::move(model)}};
+        }))
+        .def_property_readonly(
+            "model", [](CustomModelData& data) { return data.Get<GilSafePyObject>().Get(); });
 
     py::class_<PythonModel, OperationalModel, py::smart_holder>(m, "_PythonModel")
         .def(py::init<py::object>(), py::arg("model"));

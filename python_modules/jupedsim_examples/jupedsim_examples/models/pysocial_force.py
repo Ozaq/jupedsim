@@ -1,14 +1,28 @@
 # SPDX-License-Identifier: LGPL-3.0-or-later
-
-from typing import Tuple
+from dataclasses import dataclass
 
 import numpy as np
 from jupedsim.agent import Agent
 from jupedsim.geometry import LineSegment
 from jupedsim.models.custom_model import (
-    CustomModelAgentUpdate,
+    CustomModelAgentState,
     CustomOperationalModel,
 )
+
+
+@dataclass(kw_only=True, frozen=True)
+class PythonSocialForceModelState(CustomModelAgentState):
+    position: tuple[float, float]
+    velocity: tuple[float, float]
+    desired_speed: float = 0.8
+    reaction_time: float = 0.5
+    agent_scale: float = 2000
+    obstacle_scale: float = 2000
+    force_distance: float = 0.08
+    mass: float = 80
+    body_force: float = 120000
+    friction: float = 240000
+    radius: float = 0.3
 
 
 class PythonSocialForceModel(CustomOperationalModel):
@@ -37,7 +51,7 @@ class PythonSocialForceModel(CustomOperationalModel):
     ):
         CustomOperationalModel.__init__(self)
 
-    def _normalize(self, vector: Tuple[float, float]) -> Tuple[float, float]:
+    def _normalize(self, vector: tuple[float, float]) -> tuple[float, float]:
         """Normalize a 2D vector."""
         norm = np.sqrt(vector[0] ** 2 + vector[1] ** 2)
         if norm < 1e-10:
@@ -45,7 +59,7 @@ class PythonSocialForceModel(CustomOperationalModel):
         return (vector[0] / norm, vector[1] / norm)
 
     def _distance(
-        self, p1: Tuple[float, float], p2: Tuple[float, float]
+        self, p1: tuple[float, float], p2: tuple[float, float]
     ) -> float:
         """Compute Euclidean distance between two points."""
         dx = p1[0] - p2[0]
@@ -54,9 +68,12 @@ class PythonSocialForceModel(CustomOperationalModel):
 
     def _desired_force(
         self,
-        velocity: Tuple[float, float],
-        target_direction: Tuple[float, float],
-    ) -> Tuple[float, float]:
+        *,
+        velocity: tuple[float, float],
+        target_direction: tuple[float, float],
+        desired_speed: float,
+        reaction_time: float,
+    ) -> tuple[float, float]:
         """
         Compute the desired force that drives agents toward their goal.
 
@@ -64,48 +81,27 @@ class PythonSocialForceModel(CustomOperationalModel):
         where v_desired = v0 * e_target and tau is reaction time
         eq2 in paper
         """
-        v_desired_x = self.desired_speed * target_direction[0]
-        v_desired_y = self.desired_speed * target_direction[1]
+        v_desired_x = desired_speed * target_direction[0]
+        v_desired_y = desired_speed * target_direction[1]
 
-        fx = (v_desired_x - velocity[0]) / self.reaction_time
-        fy = (v_desired_y - velocity[1]) / self.reaction_time
+        fx = (v_desired_x - velocity[0]) / reaction_time
+        fy = (v_desired_y - velocity[1]) / reaction_time
 
         return (fx, fy)
 
-    def _set_parameters(self, params):
-        """Set model parameters from CustomModelParameters."""
-        self.desired_speed = getattr(params, "desired_speed", 0.8)
-        self.reaction_time = getattr(params, "reaction_time", 0.5)
-        self.agent_scale = getattr(params, "agent_scale", 2000)
-        self.obstacle_scale = getattr(params, "obstacle_scale", 2000)
-        self.force_distance = getattr(params, "force_distance", 0.08)
-        self.mass = getattr(params, "mass", 80)
-        self.body_force = getattr(params, "body_force", 120000)
-        self.friction = getattr(params, "friction", 240000)
-        self.radius = getattr(
-            params, "radius", 0.3
-        )  # typical pedestrian radius [m]
-
-    def _social_force(
-        self,
-        agent_pos: Tuple[float, float],
-        agent_velocity: Tuple[float, float],
-        other_pos: Tuple[float, float],
-        other_velocity: Tuple[float, float],
-        agent_radius: float = 0.3,
-        other_radius: float = 0.3,
-    ) -> Tuple[float, float]:
+    @staticmethod
+    def _social_force(agent, other) -> tuple[float, float]:
         """
         Compute repulsive social force between two agents.
 
         Based on Helbing's model with psychological and body contact forces.
         """
-        dx = agent_pos[0] - other_pos[0]
-        dy = agent_pos[1] - other_pos[1]
+        dx = agent.position[0] - other.position[0]
+        dy = agent.position[1] - other.position[1]
         dist = np.sqrt(dx**2 + dy**2)
 
         # Minimum distance (sum of radii)
-        min_dist = agent_radius + other_radius
+        min_dist = agent.model.radius + other.model.radius
 
         if dist < 1e-3:  # Avoid division by zero
             return (0.0, 0.0)
@@ -119,23 +115,23 @@ class PythonSocialForceModel(CustomOperationalModel):
         t_y = n_x
 
         # Relative velocity
-        dvx = agent_velocity[0] - other_velocity[0]
-        dvy = agent_velocity[1] - other_velocity[1]
+        dvx = agent.model.velocity[0] - other.model.velocity[0]
+        dvy = agent.model.velocity[1] - other.model.velocity[1]
         dv_t = dvx * t_x + dvy * t_y  # tangential component
 
         # Distance-dependent factor
-        exp_factor = np.exp(-(dist - min_dist) / self.force_distance)
+        exp_factor = np.exp(-(dist - min_dist) / agent.model.force_distance)
 
         # Normal force (repulsive)
-        f_n = self.obstacle_scale * exp_factor
+        f_n = agent.model.obstacle_scale * exp_factor
 
         # Body contact force
         if dist < min_dist:
-            f_body = self.body_force * (min_dist - dist)
+            f_body = agent.model.body_force * (min_dist - dist)
             f_n = f_n + f_body
 
         # Friction (tangential)
-        f_t = self.friction * exp_factor * dv_t if dist < min_dist else 0
+        f_t = agent.model.friction * exp_factor * dv_t if dist < min_dist else 0
 
         # Total force components
         fx = (f_n + f_t * t_x) * n_x - f_t * t_x
@@ -147,7 +143,7 @@ class PythonSocialForceModel(CustomOperationalModel):
         self,
         agent: Agent,
         obstacle: LineSegment,
-    ) -> Tuple[float, float]:
+    ) -> tuple[float, float]:
         """
         Compute repulsive force from an obstacle (line segment).
 
@@ -165,14 +161,14 @@ class PythonSocialForceModel(CustomOperationalModel):
         n_y = (agent.position[1] - closest_point[1]) / dist
 
         # Distance-dependent factor
-        exp_factor = np.exp(-dist / self.force_distance)
+        exp_factor = np.exp(-dist / agent.model.force_distance)
 
         # Normal force (repulsive)
-        f_n = self.obstacle_scale * exp_factor
+        f_n = agent.model.obstacle_scale * exp_factor
 
         # Body contact force
-        if dist < self.radius:
-            f_body = self.body_force * (self.radius - dist)
+        if dist < agent.model.radius:
+            f_body = agent.model.body_force * (agent.model.radius - dist)
             f_n = f_n + f_body
 
         fx = f_n * n_x
@@ -181,7 +177,7 @@ class PythonSocialForceModel(CustomOperationalModel):
         return (fx, fy)
 
     def compute_new_position(
-        self, dt: float, ped, geometry, neighborhood_search
+        self, dt: float, agent, geometry, neighborhood_search
     ):
         """
         Compute new position using Social Force Model.
@@ -196,61 +192,56 @@ class PythonSocialForceModel(CustomOperationalModel):
             Update object with new position and velocity
         """
 
-        # Wrap agent to access Python interface
-        agent = ped
-        pos = agent.position
-
         # Get target direction (normalized)
-        target_diff = (agent.target[0] - pos[0], agent.target[1] - pos[1])
+        target_diff = (
+            agent.target[0] - agent.position[0],
+            agent.target[1] - agent.position[1],
+        )
         # eq 1 in paper
         target_dir = self._normalize(target_diff)
-        # Get current velocity
-        model = agent.model
-        self._set_parameters(model)
-        # velocity = getattr(model, "velocity")
-        velocity = model.velocity
+        
+        state = agent.model
+
         # Initialize acceleration from desired force
-        acc_x, acc_y = self._desired_force(velocity, target_dir)
+        acc_x, acc_y = self._desired_force(
+            velocity=state.velocity,
+            target_direction=target_dir,
+            desired_speed=state.desired_speed,
+            reaction_time=state.reaction_time,
+        )
 
         ## Add social forces from neighboring agents
         neighboring_agents = neighborhood_search.get_neighboring_agents(
-            pos, 2.0
+            agent.position, 2.0
         )
 
         for neighbor in neighboring_agents:
-            neighbor_pos = neighbor.position
-            neighbor_velocity = getattr(neighbor.model, "velocity", (0.0, 0.0))
-
-            fx, fy = self._social_force(
-                pos, velocity, neighbor_pos, neighbor_velocity
-            )
-            acc_x += fx / self.mass
-            acc_y += fy / self.mass
+            fx, fy = self._social_force(agent, neighbor)
+            acc_x += fx / state.mass
+            acc_y += fy / state.mass
 
         # Add obstacle forces (from geometry)
-        for wall in geometry.get_walls_in_distance_to(pos, 5.0):
+        for wall in geometry.get_walls_in_distance_to(agent.position, 5.0):
             fx, fy = self._obstacle_force(agent, wall)
-            acc_x += fx / self.mass
-            acc_y += fy / self.mass
+            acc_x += fx / state.mass
+            acc_y += fy / state.mass
 
         # Update velocity: v_new = v_old + a * dt
         new_velocity = (
-            velocity[0] + acc_x * dt,
-            velocity[1] + acc_y * dt,
+            state.velocity[0] + acc_x * dt,
+            state.velocity[1] + acc_y * dt,
         )
 
         # Update position: x_new = x_old + v_new * dt
         new_position = (
-            pos[0] + new_velocity[0] * dt,
-            pos[1] + new_velocity[1] * dt,
+            agent.position[0] + new_velocity[0] * dt,
+            agent.position[1] + new_velocity[1] * dt,
         )
 
         # Create update
-        update = CustomModelAgentUpdate()
-        update.position = new_position
-        update.velocity = new_velocity
-
-        return update
+        return PythonSocialForceModelState(
+            position=new_position, velocity=new_velocity
+        )
 
     def check_model_constraint(self, ped, neighborhood_search, geometry):
         """Check model constraints (optional)."""

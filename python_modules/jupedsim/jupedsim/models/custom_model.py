@@ -3,7 +3,11 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import (
+    TYPE_CHECKING,
+    Protocol,
+    runtime_checkable,
+)
 
 if TYPE_CHECKING:
     from jupedsim.agent import Agent
@@ -11,38 +15,27 @@ if TYPE_CHECKING:
     from jupedsim.neighborhood import NeighborhoodSearch
 
 
-@dataclass(kw_only=True)
-class CustomModelAgentUpdate:
-    """Update returned by a custom operational model.
-
-    ``position`` and ``orientation`` update JuPedSim's canonical agent fields.
-    ``model`` replaces the custom per-agent model state when it is not ``None``.
-    This is the *only* supported way to change an agent's model state -- return a
-    new state object here rather than mutating ``ped.model`` in place (see
-    :class:`CustomOperationalModel`).
-    """
-
-    position: tuple[float, float] | None = None
-    orientation: tuple[float, float] | None = None
-    model: Any | None = None
+@runtime_checkable
+class CustomModelAgentState(Protocol):
+    position: tuple[float, float]
 
 
 @dataclass(kw_only=True)
 class CustomModelAgentParameters:
     """Parameters required to create an agent for a custom model.
 
-    ``model`` is the agent's initial per-agent model state. It should be an
-    immutable object -- a ``@dataclass(frozen=True)`` is strongly recommended --
-    because the simulation shares it live with your model during each step (see
-    :class:`CustomOperationalModel`). It defaults to ``None`` (no state); supply
-    your own state type instead of relying on a mutable default.
+    ``model`` is the agent's initial per-agent model state and is **required**:
+    you must set it to your own object satisfying :class:`CustomModelAgentState`
+    (in particular it carries the agent's ``position``, from which the agent is
+    spawned). It should be an immutable object -- a ``@dataclass(frozen=True)`` is
+    strongly recommended -- because the simulation shares it live with your model
+    during each step (see :class:`CustomOperationalModel`). The ``None`` default is
+    only a placeholder; adding an agent without setting ``model`` raises.
     """
 
-    position: tuple[float, float] = (0.0, 0.0)
-    orientation: tuple[float, float] = (0.0, 0.0)
     journey_id: int = 0
     stage_id: int = 0
-    model: Any = None
+    model: CustomModelAgentState | None = None
 
 
 class CustomOperationalModel(ABC):
@@ -67,7 +60,7 @@ class CustomOperationalModel(ABC):
         producing order-dependent results.
 
         The only correct way to change state is to return a new state object via
-        :class:`CustomModelAgentUpdate` (``model=...``). Make your state type
+        :class:`CustomModelAgentState` (``model=...``). Make your state type
         immutable -- a ``@dataclass(frozen=True)`` -- so accidental in-place
         writes raise immediately instead of corrupting the simulation. See the
         ``pysocial_force`` example for the reference pattern.
@@ -80,9 +73,10 @@ class CustomOperationalModel(ABC):
         ped: Agent,
         geometry: Geometry,
         neighborhood_search: NeighborhoodSearch,
-    ) -> CustomModelAgentUpdate:
+    ) -> CustomModelAgentState:
         """Compute one update for ``ped``."""
 
+    @abstractmethod
     def check_model_constraint(
         self,
         ped: Agent,
@@ -97,7 +91,7 @@ class CustomOperationalModel(ABC):
         ped,
         geometry,
         neighborhood_search,
-    ) -> CustomModelAgentUpdate:
+    ) -> CustomModelAgentState:
         from jupedsim.agent import Agent
         from jupedsim.geometry import Geometry
         from jupedsim.neighborhood import NeighborhoodSearch

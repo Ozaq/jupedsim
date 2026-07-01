@@ -2,7 +2,10 @@
 import jupedsim as jps
 import pytest
 import shapely
-from jupedsim_examples.models.pysocial_force import PythonSocialForceModel
+from jupedsim_examples.models.pysocial_force import (
+    PythonSocialForceModel,
+    PythonSocialForceModelState,
+)
 
 
 @pytest.fixture
@@ -18,11 +21,13 @@ def corridor_simulation():
 
 
 def _add_agent(sim, journey_id, stage_id, position, velocity=(0.0, 0.0)):
-    params = jps.CustomModelAgentParameters()
-    params.position = position
-    params.journey_id = journey_id
-    params.stage_id = stage_id
-    params.velocity = velocity
+    params = jps.CustomModelAgentParameters(
+        journey_id=journey_id,
+        stage_id=stage_id,
+        model=PythonSocialForceModelState(
+            position=position, velocity=velocity
+        ),
+    )
     return sim.add_agent(params)
 
 
@@ -122,21 +127,23 @@ def test_custom_desired_speed_affects_movement():
     journey_id = sim.add_journey(journey)
 
     # Slow agent
-    slow = jps.CustomModelAgentParameters()
-    slow.position = (2.0, 8.0)
-    slow.journey_id = journey_id
-    slow.stage_id = exit_id
-    slow.velocity = (0.0, 0.0)
-    slow.desired_speed = 0.5
+    slow = jps.CustomModelAgentParameters(
+        journey_id=journey_id,
+        stage_id=exit_id,
+        model=PythonSocialForceModelState(
+            position=(2.0, 8.0), velocity=(0.0, 0.0), desired_speed=0.5
+        ),
+    )
     slow_id = sim.add_agent(slow)
 
     # Fast agent
-    fast = jps.CustomModelAgentParameters()
-    fast.position = (2.0, 12.0)
-    fast.journey_id = journey_id
-    fast.stage_id = exit_id
-    fast.velocity = (0.0, 0.0)
-    fast.desired_speed = 2.0
+    fast = jps.CustomModelAgentParameters(
+        journey_id=journey_id,
+        stage_id=exit_id,
+        model=PythonSocialForceModelState(
+            position=(2.0, 12.0), velocity=(0.0, 0.0), desired_speed=2.0
+        ),
+    )
     fast_id = sim.add_agent(fast)
 
     for _ in range(100):
