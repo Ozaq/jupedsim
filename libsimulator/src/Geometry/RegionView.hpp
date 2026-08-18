@@ -6,6 +6,7 @@
 #include "Geometry/WallMerge.hpp"
 #include "LineSegment.hpp"
 #include "Point.hpp"
+#include "Visitor.hpp"
 
 #include <cstddef>
 #include <vector>
@@ -65,3 +66,12 @@ private:
     SegmentGrid<MergedWall> _walls;
     std::vector<RegionSeam> _seams;
 };
+
+struct DirectedSeam {
+    LineSegment Segment;
+    size_t ConnectedRegion;
+};
+
+using BoundaryElement = std::variant<LineSegment, DirectedSeam>;
+
+const LineSegment& segment_of(const BoundaryElement& e);

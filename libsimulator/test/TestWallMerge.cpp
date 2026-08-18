@@ -301,3 +301,7 @@ TEST(WallMerge, FusedWallsAreTheOnesThePolygonPathWouldGive)
     ASSERT_EQ(expected.size(), 8u) << "four for the room, four for the pillar";
     EXPECT_EQ(as_directed_segments(fused), expected);
 }
+
+//=====================================================================================================================
+// Prototype new WallMerge
+//=====================================================================================================================

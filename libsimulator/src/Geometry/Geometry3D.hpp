@@ -7,6 +7,7 @@
 #include "Geometry/RegionSplit.hpp"
 #include "Geometry/RegionView.hpp"
 #include "Geometry/WallRange.hpp"
+#include "Geometry/SegmentGrid.hpp"
 #include "Point.hpp"
 
 #include <array>
@@ -100,6 +101,7 @@ public:
     /// On a mesh the answer may have to be collected from more than one region, since a
     /// seam can bring another one within reach. What comes back is the same either way.
     WallRange line_segments_in_range(const Location& who, double distance = -1.0) const;
+    WallRange line_segments_in_range2(const Location& who, double distance = -1.0) const;
 
     /// True iff the straight horizontal step @p direction, taken from @p who, crosses no
     /// wall and does not run off the surface.
@@ -159,4 +161,5 @@ private:
     RegionMap _region{};
     std::size_t _regionCount{0};
     std::vector<RegionView> _regionViews{};
+    std::vector<SegmentGrid<>> _boundaries{};
 };

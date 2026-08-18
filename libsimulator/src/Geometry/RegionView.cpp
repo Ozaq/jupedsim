@@ -32,3 +32,12 @@ bool RegionView::crosses_seam(Point a, Point b) const
         return intersects(chord, seam.segment);
     });
 }
+
+const LineSegment& segment_of(const BoundaryElement& e)
+{
+    return std::visit(
+        overloaded{
+            [](const LineSegment& ls) -> auto& { return ls; },
+            [](const DirectedSeam& ds) -> auto& { return ds.Segment; }},
+        e);
+}

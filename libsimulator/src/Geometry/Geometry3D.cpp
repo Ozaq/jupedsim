@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #include "Geometry/Geometry3D.hpp"
 
+#include "CfgCgal.hpp"
 #include "Geometry/PolylineMerge.hpp"
 #include "Geometry/RegionReach.hpp"
 #include "Geometry/RegionSeams.hpp"
 #include "Geometry/WallMerge.hpp"
 #include "LineSegment.hpp"
 #include "SimulationError.hpp"
+#include "Validation.hpp"
 
 #include <CGAL/mark_domain_in_triangulation.h>
 
@@ -54,6 +56,7 @@ SurfaceMesh mesh_from_polygon(const PolyWithHoles& poly)
                 vertex_of(f->vertex(0)), vertex_of(f->vertex(1)), vertex_of(f->vertex(2)));
         }
     }
+    NormaliseAndValidateMesh(mesh);
     return mesh;
 }
 
@@ -69,6 +72,18 @@ Geometry3D::Geometry3D(PolyWithHoles poly) : Geometry3D(mesh_from_polygon(poly))
     _geometry2D = std::make_unique<Geometry2D>(std::move(poly));
 }
 
+SurfaceMesh::Face_index incident_face(const SurfaceMesh& mesh, SurfaceMesh::Edge_index e)
+{
+    auto h = mesh.halfedge(e, 0);
+    if(mesh.is_border(h)) {
+        h = mesh.opposite(h);
+    }
+    if(mesh.is_border(h)) {
+        throw SimulationError("Input mesh contains edges without incident faces.");
+    }
+    return mesh.face(h);
+}
+
 void Geometry3D::build()
 {
     // Compact vertex/face indices so vertices()/triangles()/region_id_per_face() are
@@ -80,6 +95,48 @@ void Geometry3D::build()
     _region = split.region;
     _regionCount = split.count;
     build_region_views();
+
+    std::vector<std::vector<LineSegment>> elements{};
+    elements.resize(_regionCount);
+
+    for(const auto edge : _mesh.edges()) {
+        if(_mesh.is_border(edge)) {
+            const auto f = incident_face(_mesh, edge);
+            const auto region_id = _region[f];
+            auto he = _mesh.halfedge(edge, 0);
+            if(_mesh.is_border(he)) {
+                he = _mesh.opposite(he);
+            }
+            const auto v0 = _mesh.point(_mesh.source(he));
+            const auto v1 = _mesh.point(_mesh.target(he));
+            elements.at(region_id).emplace_back(Point(v0.x(), v0.y()), Point(v1.x(), v1.y()));
+            continue;
+        }
+        // const auto he0 = _mesh.halfedge(edge, 0);
+        // const auto he1 = _mesh.halfedge(edge, 1);
+        // const auto he0_region = _region[_mesh.face(he0)];
+        // const auto he1_region = _region[_mesh.face(he1)];
+        // if(he0_region != he1_region) {
+        //     const auto v0 = _mesh.point(_mesh.source(he0));
+        //     const auto v1 = _mesh.point(_mesh.target(he0));
+        //     elements.at(he0_region)
+        //         .emplace_back(
+        //             DirectedSeam{
+        //                 .Segment = LineSegment(Point(v0.x(), v0.y()), Point(v1.x(), v1.y())),
+        //                 .ConnectedRegion = he1_region});
+        //     elements.at(he1_region)
+        //         .emplace_back(
+        //             DirectedSeam{
+        //                 .Segment = LineSegment(Point(v1.x(), v1.y()), Point(v0.x(), v0.y())),
+        //                 .ConnectedRegion = he0_region});
+        // }
+    }
+    _boundaries.reserve(_regionCount);
+    std::transform(
+        std::begin(elements),
+        std::end(elements),
+        std::back_inserter(_boundaries),
+        [](const auto& e) { return SegmentGrid(e); });
 }
 
 void Geometry3D::build_region_views()
@@ -137,7 +194,16 @@ bool Geometry3D::is_valid_location(const Point3D& p) const
     return face_below(p).face != SurfaceMesh::null_face();
 }
 
-WallRange Geometry3D::line_segments_in_range(const Location& who, double distance) const
+// TODO(kkratz): Implement with regions in mind
+WallRange Geometry3D::line_segments_in_range(const Location& loc, double distance) const
+{
+    const auto& geo = _boundaries[loc.region()];
+    return WallRange{
+        distance < 0.0 ? geo.LineSegmentsInApproxDistanceTo(loc.xy()) :
+                         geo.LineSegmentsInDistanceTo(distance, loc.xy())};
+}
+
+WallRange Geometry3D::line_segments_in_range2(const Location& who, double distance) const
 {
     if(_geometry2D != nullptr) {
         return WallRange{

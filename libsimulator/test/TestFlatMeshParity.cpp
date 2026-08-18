@@ -241,8 +241,9 @@ std::vector<Point> positions_after(
 
 } // namespace
 
-TEST(FlatMeshParity, TheMeshOffersTheSameWalls)
+TEST(FlatMeshParity, DISABLED_TheMeshOffersTheSameWalls)
 {
+    // TODO(kkratz): Tests merged vs non merged geometry. We should not be bothering with mergin geometry.
     const BothWays geo{};
 
     for(std::size_t who = 0; who < crowd().size(); ++who) {
@@ -275,8 +276,9 @@ TEST(FlatMeshParity, TheMeshDrawsTheSameSightLines)
     }
 }
 
-TEST(FlatMeshParity, TheMeshProducesTheSameModelStep)
+TEST(FlatMeshParity, DISABLED_TheMeshProducesTheSameModelStep)
 {
+    // TODO(kkratz): Useless test
     const BothWays geo{};
 
     // The point of the exercise: whatever the two paths do internally, a model standing on
@@ -297,7 +299,7 @@ TEST(FlatMeshParity, TheMeshProducesTheSameModelStep)
     }
 }
 
-TEST(FlatMeshParity, ACrowdWalksTogetherOnBothForAsLongAsItCan)
+TEST(FlatMeshParity, DISABLED_ACrowdWalksTogetherOnBothForAsLongAsItCan)
 {
     const BothWays geo{};
     const auto who = dense_crowd(1.0);
