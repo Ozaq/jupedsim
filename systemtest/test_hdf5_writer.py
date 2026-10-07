@@ -3,12 +3,11 @@
 
 import pathlib
 
+import h5py
 import jupedsim as jps
 import pytest
 import shapely
 from shapely import GeometryCollection
-
-h5py = pytest.importorskip("h5py")
 
 
 @pytest.fixture
@@ -18,7 +17,8 @@ def square_simulation(tmp_path: pathlib.Path):
     )
     out_filename = tmp_path / "traj.h5"
     writer = jps.Hdf5TrajectoryWriter(
-        output_file=out_filename, every_nth_frame=1, compression_level=1
+        output_file=out_filename,
+        every_nth_frame=1,
     )
     sim = jps.Simulation(
         model=jps.CollisionFreeSpeedModelV2(),
@@ -45,31 +45,40 @@ def square_simulation(tmp_path: pathlib.Path):
     return out_filename
 
 
-def test_required_layout_is_pedpy_compatible(square_simulation):
-    with h5py.File(square_simulation, "r") as hf:
-        assert "trajectory" in hf, "missing /trajectory dataset"
-        ds = hf["trajectory"]
-
-        for col in ("frame", "id", "x", "y"):
-            assert col in ds.dtype.names, f"missing column '{col}'"
-
-        assert "fps" in ds.attrs, "missing fps attribute on /trajectory"
-        assert ds.attrs["fps"] > 0
-
-        assert "wkt_geometry" in hf.attrs, "missing root wkt_geometry"
-        assert "POLYGON" in hf.attrs["wkt_geometry"]
-
-
 def test_payload_shape_and_values(square_simulation):
     with h5py.File(square_simulation, "r") as hf:
-        ds = hf["trajectory"]
-        data = ds[:]
-        assert data.shape[0] > 0
-        assert (data["frame"] >= 0).all()
-        assert (data["id"] > 0).all()
-        assert (0 <= data["x"]).all() and (data["x"] <= 10).all()
-        assert (0 <= data["y"]).all() and (data["y"] <= 10).all()
-        assert (data["z"] == 0.0).all()
+        data = hf["trajectory"][:]
+        offsets = hf["frame_offsets"][:]
+
+    assert data.dtype.names == ("frame", "id", "x", "y", "z", "region_id")
+    assert [data.dtype[name].str for name in data.dtype.names] == [
+        "<u8",
+        "<u8",
+        "<f4",
+        "<f4",
+        "<f4",
+        "<u8",
+    ]
+
+    # Iteration 0 plus 50 iterations, each recorded (every_nth_frame=1),
+    # with all 3 agents still on their way to the exit.
+    frame_count = 51
+    assert data.shape == (frame_count * 3,)
+
+    # frame_offsets holds the start row of every frame plus a final end marker.
+    assert offsets.shape == (frame_count + 1,)
+    assert offsets[0] == 0
+    assert offsets[-1] == data.shape[0]
+    for frame in range(frame_count):
+        rows = data[offsets[frame] : offsets[frame + 1]]
+        assert (rows["frame"] == frame).all()
+        assert sorted(rows["id"]) == sorted(data[:3]["id"])
+
+    assert (data["id"] > 0).all()
+    assert (0 <= data["x"]).all() and (data["x"] <= 10).all()
+    assert (0 <= data["y"]).all() and (data["y"] <= 10).all()
+    assert (data["z"] == 0.0).all()
+    assert (data["region_id"] == 0).all()
 
 
 def test_metadata_attributes(square_simulation):
@@ -79,16 +88,11 @@ def test_metadata_attributes(square_simulation):
             "producer",
             "dt",
             "every_nth_frame",
-            "fps",
             "created",
-            "xmin",
-            "xmax",
-            "ymin",
-            "ymax",
         ):
             assert key in hf.attrs, f"missing root attribute '{key}'"
         assert hf.attrs["producer"] == "JuPedSim"
-        assert hf.attrs["schema_version"] == 2
+        assert hf.attrs["schema_version"] == 3
 
 
 def test_close_is_idempotent(tmp_path):
@@ -112,24 +116,13 @@ def test_close_without_begin_writing(tmp_path):
     out = tmp_path / "untouched.h5"
     writer = jps.Hdf5TrajectoryWriter(output_file=out, every_nth_frame=1)
     writer.close()
-    with h5py.File(out, "r") as hf:
-        assert "trajectory" not in hf
+    assert not out.exists()
 
 
-def test_static_geometry_omits_geometry_group(square_simulation):
-    """For runs with a single geometry the /geometry group is absent."""
+def test_mesh(square_simulation):
+    # The 10x10 square is triangulated into 2 triangles over its 4 corners.
     with h5py.File(square_simulation, "r") as hf:
-        assert "geometry" not in hf
-        assert "frame_geometry" not in hf
-        assert "wkt_geometry" in hf.attrs
-
-
-def test_geometry_hash_is_deterministic():
-    """The geometry hash must not depend on PYTHONHASHSEED."""
-    from jupedsim.hdf5_serialization import _stable_geometry_hash
-
-    wkt = "POLYGON ((0 0, 1 0, 1 1, 0 1, 0 0))"
-    assert _stable_geometry_hash(wkt) == _stable_geometry_hash(wkt)
-    assert _stable_geometry_hash(wkt) != _stable_geometry_hash(
-        "POLYGON ((0 0, 2 0, 2 2, 0 2, 0 0))"
-    )
+        assert hf["mesh/vertices"].shape == (4, 3)
+        assert hf["mesh/triangles"].shape == (2, 3)
+        assert hf["mesh/regions"].shape == (2,)
+        assert (hf["mesh/regions"][:] == 0).all()
