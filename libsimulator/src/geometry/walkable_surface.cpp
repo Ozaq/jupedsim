@@ -160,29 +160,6 @@ size_t WalkableSurface::add_region(Polygon polygon, double height)
     return insert_region(std::move(polygons), vertices, height);
 }
 
-size_t WalkableSurface::add_region(const PolyWithHoles& polygon, double height)
-{
-    std::vector<Point3D> vertices{};
-    std::vector<std::vector<size_t>> polygons{};
-
-    auto convert_ring = [&vertices, &polygons, height](const Poly& ring) {
-        std::vector<size_t> converted_ring{};
-        converted_ring.reserve(ring.size());
-        for(const Point2D& p : ring.container()) {
-            converted_ring.push_back(vertices.size());
-            vertices.push_back({p.x(), p.y(), height});
-        }
-        polygons.emplace_back(std::move(converted_ring));
-    };
-
-    convert_ring(polygon.outer_boundary());
-    for(const Poly& hole : polygon.holes()) {
-        convert_ring(hole);
-    }
-
-    return insert_region(std::move(polygons), vertices, height);
-}
-
 size_t WalkableSurface::insert_region(
     std::vector<std::vector<size_t>> polygons,
     const std::vector<Point3D>& vertices,

@@ -3,12 +3,12 @@
 
 #include "geometry/geometry.hpp"
 #include "geometry/walkable_surface.hpp"
-#include "geometry_builder.hpp"
 #include "point.hpp"
 
 #include <array>
 #include <cstddef>
 #include <memory>
+#include <utility>
 #include <vector>
 
 /// Shared geometries across tests. Decouples generation of geometry from usage.
@@ -27,21 +27,13 @@ struct SingleRoom {
     std::size_t room_id;
 };
 
-/// Flat geometry at z = 0.
-inline SingleRoom from_polygons(
-    const std::vector<std::vector<Point>>& boundaries,
-    const std::vector<std::vector<Point>>& holes = {})
+/// Flat polygon at z = 0.
+inline SingleRoom
+from_polygon(std::vector<Point> boundary, std::vector<std::vector<Point>> holes = {})
 {
     SingleRoom room{};
-    GeometryBuilder builder{};
-    for(const auto& loop : boundaries) {
-        builder.add_accessible_area(loop);
-    }
-    for(const auto& loop : holes) {
-        builder.exclude_from_accessible_area(loop);
-    }
     WalkableSurface surface{};
-    room.room_id = surface.add_region(builder.build(), 0.0);
+    room.room_id = surface.add_region({std::move(boundary), std::move(holes)}, 0.0);
     room.geometry = surface.create_geometry();
     return room;
 }
@@ -49,7 +41,7 @@ inline SingleRoom from_polygons(
 /// Flat rectangle at z = 0.
 inline SingleRoom rectangle(Point lower_left, Point upper_right)
 {
-    return from_polygons({rectangle_points(lower_left, upper_right)});
+    return from_polygon(rectangle_points(lower_left, upper_right));
 }
 
 /// A structure to hold two connected regions and their geometry.
@@ -121,8 +113,8 @@ inline SingleRoom rectangle_with_hole(
     Point hole_lower_left,
     Point hole_upper_right)
 {
-    return from_polygons(
-        {rectangle_points(lower_left, upper_right)},
+    return from_polygon(
+        rectangle_points(lower_left, upper_right),
         {rectangle_points(hole_lower_left, hole_upper_right)});
 }
 
@@ -316,7 +308,7 @@ inline SingleRoom corridor_with_door_recesses()
         ring.push_back({far, width});
     }
     ring.push_back({0, width});
-    return from_polygons({ring});
+    return from_polygon(ring);
 }
 
 } // namespace test_geometries

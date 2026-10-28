@@ -446,8 +446,8 @@ TEST(GeometryClipToRegion, ClippedAtSeam)
 TEST(GeometryClipToRegion, ConcaveCreatesSeveralPieces)
 {
     // A U open at the top. The area runs across both arms and the gap between them.
-    const auto room = test_geometries::from_polygons(
-        {{{0, 0}, {9, 0}, {9, 9}, {6, 9}, {6, 3}, {3, 3}, {3, 9}, {0, 9}}});
+    const auto room = test_geometries::from_polygon(
+        {{0, 0}, {9, 0}, {9, 9}, {6, 9}, {6, 3}, {3, 3}, {3, 9}, {0, 9}});
     const Polygon area{test_geometries::rectangle_points({0, 6}, {9, 8})};
 
     const auto pieces = room.geometry->clip_to_region(area, room.room_id);

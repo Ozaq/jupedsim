@@ -27,7 +27,6 @@ public:
     };
 
     size_t add_region(Polygon polygon, double height);
-    size_t add_region(const PolyWithHoles& polygon, double height);
     size_t connect_regions(size_t from_region, LineSegment from, size_t to_region, LineSegment to);
 
     using RegionGraph2D = Geometry::RegionGraph2D;
