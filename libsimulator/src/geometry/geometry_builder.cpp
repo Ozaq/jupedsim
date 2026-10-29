@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
-#include "geometry/walkable_surface.hpp"
+#include "geometry/geometry_builder.hpp"
 
 #include "cfg_cgal.hpp"
 #include "geometry/geometry.hpp"
@@ -127,9 +127,9 @@ Geometry::SeamEdge find_seam_edge(const PolyWithHoles& poly, const Point2D& a, c
 } // namespace
 
 //==================================================================================================
-// WalkableSurface
+// GeometryBuilder
 //==================================================================================================
-size_t WalkableSurface::add_region(Polygon polygon, double height)
+size_t GeometryBuilder::add_region(Polygon polygon, double height)
 {
     // Build up locally first. If an error is thrown, the internal structures are still fine.
     std::vector<Point3D> vertices{};
@@ -160,7 +160,7 @@ size_t WalkableSurface::add_region(Polygon polygon, double height)
     return insert_region(std::move(polygons), vertices, height);
 }
 
-size_t WalkableSurface::insert_region(
+size_t GeometryBuilder::insert_region(
     std::vector<std::vector<size_t>> polygons,
     const std::vector<Point3D>& vertices,
     double height)
@@ -197,7 +197,7 @@ size_t WalkableSurface::insert_region(
     return boost::add_vertex(region, _region_graph);
 }
 
-std::array<size_t, 2> WalkableSurface::find_edge(size_t region_id, const LineSegment& edge) const
+std::array<size_t, 2> GeometryBuilder::find_edge(size_t region_id, const LineSegment& edge) const
 {
     // no need to compare z as regions by design cannot overlap in xy within a single region
     auto match_in_2d = [this](size_t vertex_id, const Point& p) {
@@ -221,7 +221,7 @@ std::array<size_t, 2> WalkableSurface::find_edge(size_t region_id, const LineSeg
     throw SimulationError("{} is not an edge of region {}.", edge, region_id);
 }
 
-size_t WalkableSurface::connect_regions(
+size_t GeometryBuilder::connect_regions(
     size_t from_region,
     LineSegment from,
     size_t to_region,
@@ -290,7 +290,7 @@ size_t WalkableSurface::connect_regions(
     return connector_region;
 }
 
-std::unique_ptr<WalkableSurface::RegionGraph2D> WalkableSurface::create_region_graph_2d() const
+std::unique_ptr<GeometryBuilder::RegionGraph2D> GeometryBuilder::create_region_graph_2d() const
 {
     const auto as_point_2d = [this](size_t vertex_id) {
         const Point3D& v = _global_vertices[vertex_id];
@@ -317,7 +317,7 @@ std::unique_ptr<WalkableSurface::RegionGraph2D> WalkableSurface::create_region_g
     return graph;
 }
 
-void WalkableSurface::validate_floor_overlap(const PolyWithHoles& poly_with_holes, double height)
+void GeometryBuilder::validate_floor_overlap(const PolyWithHoles& poly_with_holes, double height)
     const
 {
     for(const auto region_id : boost::make_iterator_range(boost::vertices(_region_graph))) {
@@ -336,8 +336,10 @@ void WalkableSurface::validate_floor_overlap(const PolyWithHoles& poly_with_hole
     }
 }
 
-std::unique_ptr<Geometry> WalkableSurface::create_geometry()
+std::unique_ptr<Geometry> GeometryBuilder::build() const
 {
+    validate();
+
     SurfaceMesh mesh{};
     RegionSplit region_split{{}, boost::num_vertices(_region_graph)};
 
@@ -382,4 +384,8 @@ std::unique_ptr<Geometry> WalkableSurface::create_geometry()
 
     return std::make_unique<Geometry>(
         std::move(mesh), std::move(region_split), create_region_graph_2d());
+}
+
+void GeometryBuilder::validate() const
+{
 }

@@ -2,7 +2,7 @@
 #pragma once
 
 #include "geometry/geometry.hpp"
-#include "geometry/walkable_surface.hpp"
+#include "geometry/geometry_builder.hpp"
 #include "point.hpp"
 
 #include <array>
@@ -32,9 +32,9 @@ inline SingleRoom
 from_polygon(std::vector<Point> boundary, std::vector<std::vector<Point>> holes = {})
 {
     SingleRoom room{};
-    WalkableSurface surface{};
+    GeometryBuilder surface{};
     room.room_id = surface.add_region({std::move(boundary), std::move(holes)}, 0.0);
-    room.geometry = surface.create_geometry();
+    room.geometry = surface.build();
     return room;
 }
 
@@ -59,14 +59,14 @@ struct TwoConnectedRegions {
 inline TwoConnectedRegions two_rooms()
 {
     TwoConnectedRegions out{};
-    WalkableSurface surface{};
+    GeometryBuilder surface{};
     out.room_1 =
-        surface.add_region(WalkableSurface::Polygon{rectangle_points({0, 0}, {10, 10}), {}}, 0.0);
+        surface.add_region(GeometryBuilder::Polygon{rectangle_points({0, 0}, {10, 10}), {}}, 0.0);
     out.room_2 =
-        surface.add_region(WalkableSurface::Polygon{rectangle_points({11, 0}, {21, 10}), {}}, 0.0);
+        surface.add_region(GeometryBuilder::Polygon{rectangle_points({11, 0}, {21, 10}), {}}, 0.0);
     out.connector =
         surface.connect_regions(out.room_1, {{10, 0}, {10, 10}}, out.room_2, {{11, 0}, {11, 10}});
-    out.geometry = surface.create_geometry();
+    out.geometry = surface.build();
     return out;
 }
 
@@ -76,14 +76,14 @@ inline TwoConnectedRegions two_rooms()
 inline TwoConnectedRegions floors_joined_by_stairs()
 {
     TwoConnectedRegions out{};
-    WalkableSurface surface{};
+    GeometryBuilder surface{};
     out.room_1 =
-        surface.add_region(WalkableSurface::Polygon{rectangle_points({0, 0}, {5, 5}), {}}, 0.0);
+        surface.add_region(GeometryBuilder::Polygon{rectangle_points({0, 0}, {5, 5}), {}}, 0.0);
     out.room_2 =
-        surface.add_region(WalkableSurface::Polygon{rectangle_points({10, 0}, {15, 5}), {}}, 3.0);
+        surface.add_region(GeometryBuilder::Polygon{rectangle_points({10, 0}, {15, 5}), {}}, 3.0);
     out.connector =
         surface.connect_regions(out.room_1, {{5, 0}, {5, 5}}, out.room_2, {{10, 0}, {10, 5}});
-    out.geometry = surface.create_geometry();
+    out.geometry = surface.build();
     return out;
 }
 
@@ -97,12 +97,12 @@ inline TwoConnectedRegions stacked_floors_with_ramp()
     TwoConnectedRegions out{};
     const auto footprint = rectangle_points({0, 0}, {20, 10});
     const auto opening = rectangle_points({6, 4}, {14, 6});
-    WalkableSurface surface{};
-    out.room_1 = surface.add_region(WalkableSurface::Polygon{footprint, {opening}}, 0.0);
-    out.room_2 = surface.add_region(WalkableSurface::Polygon{footprint, {opening}}, 3.0);
+    GeometryBuilder surface{};
+    out.room_1 = surface.add_region(GeometryBuilder::Polygon{footprint, {opening}}, 0.0);
+    out.room_2 = surface.add_region(GeometryBuilder::Polygon{footprint, {opening}}, 3.0);
     out.connector =
         surface.connect_regions(out.room_1, {{6, 4}, {6, 6}}, out.room_2, {{14, 4}, {14, 6}});
-    out.geometry = surface.create_geometry();
+    out.geometry = surface.build();
     return out;
 }
 
@@ -133,14 +133,14 @@ inline TwoConnectedRegionsWithLanding u_stair()
 {
     TwoConnectedRegionsWithLanding out{};
     // (8, 9) and (13, 9) split the stairwell sides so each flight has an edge of its own.
-    const WalkableSurface::Ring stairwell{{8, 6}, {14, 6}, {14, 12}, {8, 12}, {8, 9}};
-    WalkableSurface surface{};
+    const GeometryBuilder::Ring stairwell{{8, 6}, {14, 6}, {14, 12}, {8, 12}, {8, 9}};
+    GeometryBuilder surface{};
     out.room_1 = surface.add_region({rectangle_points({0, 0}, {20, 20}), {stairwell}}, 0.0);
     out.room_2 = surface.add_region({rectangle_points({0, 0}, {20, 20}), {stairwell}}, 3.0);
     out.landing = surface.add_region({{{13, 6}, {14, 6}, {14, 12}, {13, 12}, {13, 9}}, {}}, 1.5);
     surface.connect_regions(out.room_1, {{8, 6}, {8, 9}}, out.landing, {{13, 6}, {13, 9}});
     surface.connect_regions(out.landing, {{13, 9}, {13, 12}}, out.room_2, {{8, 9}, {8, 12}});
-    out.geometry = surface.create_geometry();
+    out.geometry = surface.build();
     return out;
 }
 
@@ -150,7 +150,7 @@ inline TwoConnectedRegionsWithLanding u_stair()
 inline TwoConnectedRegions ramp(Point lower_left, Point upper_right, double height)
 {
     TwoConnectedRegions out{};
-    WalkableSurface surface{};
+    GeometryBuilder surface{};
     out.room_1 = surface.add_region(
         {rectangle_points({lower_left.x, lower_left.y - 1}, {upper_right.x, lower_left.y}), {}},
         0.0);
@@ -162,7 +162,7 @@ inline TwoConnectedRegions ramp(Point lower_left, Point upper_right, double heig
         {lower_left, {upper_right.x, lower_left.y}},
         out.room_2,
         {{lower_left.x, upper_right.y}, upper_right});
-    out.geometry = surface.create_geometry();
+    out.geometry = surface.build();
     return out;
 }
 
@@ -173,12 +173,12 @@ inline TwoConnectedRegions ramp(Point lower_left, Point upper_right, double heig
 inline TwoConnectedRegions floor_with_ramp()
 {
     TwoConnectedRegions out{};
-    WalkableSurface surface{};
+    GeometryBuilder surface{};
     out.room_1 = surface.add_region({rectangle_points({0, 0}, {10, 10}), {}}, 0.0);
     out.room_2 = surface.add_region({rectangle_points({0, 15}, {10, 16}), {}}, 5.0);
     out.connector =
         surface.connect_regions(out.room_1, {{0, 10}, {10, 10}}, out.room_2, {{0, 15}, {10, 15}});
-    out.geometry = surface.create_geometry();
+    out.geometry = surface.build();
     return out;
 }
 
@@ -193,7 +193,7 @@ inline TwoConnectedRegions stacked_floors(Point lower_left, Point upper_right, d
     const double run = 2.0 * floor_height;
     const double stair_top = upper_right.x + run;
     TwoConnectedRegions out{};
-    WalkableSurface surface{};
+    GeometryBuilder surface{};
     // (upper_right.x, lower_left.y + width) splits the east wall so the stair has an edge.
     out.room_1 = surface.add_region(
         {{lower_left,
@@ -222,7 +222,7 @@ inline TwoConnectedRegions stacked_floors(Point lower_left, Point upper_right, d
         {{upper_right.x, lower_left.y}, {upper_right.x, lower_left.y + width}},
         out.room_2,
         {{stair_top, lower_left.y}, {stair_top, lower_left.y + width}});
-    out.geometry = surface.create_geometry();
+    out.geometry = surface.build();
     return out;
 }
 
@@ -233,14 +233,14 @@ inline TwoConnectedRegions stacked_floors(Point lower_left, Point upper_right, d
 inline TwoConnectedRegions switchback_stair()
 {
     TwoConnectedRegions out{};
-    WalkableSurface surface{};
+    GeometryBuilder surface{};
     // (10, 4) splits the ground floor's east wall so the flight has an edge of its own.
     out.room_1 = surface.add_region({{{0, 0}, {10, 0}, {10, 4}, {10, 8}, {0, 8}}, {}}, 0.0);
     out.room_2 =
         surface.add_region({{{0, 4}, {14, 4}, {14, 0}, {18, 0}, {18, 8}, {0, 8}}, {}}, 3.0);
     out.connector =
         surface.connect_regions(out.room_1, {{10, 0}, {10, 4}}, out.room_2, {{14, 0}, {14, 4}});
-    out.geometry = surface.create_geometry();
+    out.geometry = surface.build();
     return out;
 }
 
@@ -251,12 +251,12 @@ inline TwoConnectedRegions switchback_stair()
 inline TwoConnectedRegions straight_stair_to_a_landing()
 {
     TwoConnectedRegions out{};
-    WalkableSurface surface{};
+    GeometryBuilder surface{};
     out.room_1 = surface.add_region({rectangle_points({0, 0}, {10, 8}), {}}, 0.0);
     out.room_2 = surface.add_region({rectangle_points({15, 0}, {20, 8}), {}}, 3.0);
     out.connector =
         surface.connect_regions(out.room_1, {{10, 0}, {10, 8}}, out.room_2, {{15, 0}, {15, 8}});
-    out.geometry = surface.create_geometry();
+    out.geometry = surface.build();
     return out;
 }
 
@@ -272,14 +272,14 @@ inline TwoConnectedRegions straight_stair_to_a_landing()
 inline TwoConnectedRegionsWithLanding stair_turning_on_a_landing()
 {
     TwoConnectedRegionsWithLanding out{};
-    WalkableSurface surface{};
+    GeometryBuilder surface{};
     out.room_1 = surface.add_region({rectangle_points({-1, 0}, {0, 2}), {}}, 0.0);
     // (6, 2) and (6, 3) split the landing's west side so each flight has an edge of its own.
     out.landing = surface.add_region({{{6, 0}, {8, 0}, {8, 5}, {6, 5}, {6, 3}, {6, 2}}, {}}, 3.0);
     out.room_2 = surface.add_region({rectangle_points({-1, 3}, {0, 5}), {}}, 6.0);
     surface.connect_regions(out.room_1, {{0, 0}, {0, 2}}, out.landing, {{6, 0}, {6, 2}});
     surface.connect_regions(out.landing, {{6, 3}, {6, 5}}, out.room_2, {{0, 3}, {0, 5}});
-    out.geometry = surface.create_geometry();
+    out.geometry = surface.build();
     return out;
 }
 

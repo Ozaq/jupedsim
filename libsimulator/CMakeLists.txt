@@ -26,6 +26,8 @@ target_sources(simulator PRIVATE
     src/geometry/clearance_field.hpp
     src/geometry/geometry.cpp
     src/geometry/geometry.hpp
+    src/geometry/geometry_builder.cpp
+    src/geometry/geometry_builder.hpp
     src/geometry/location.cpp
     src/geometry/location.hpp
     src/geometry/projected_boundary.cpp
@@ -36,10 +38,6 @@ target_sources(simulator PRIVATE
     src/geometry/segment_grid.hpp
     src/geometry/validation.cpp
     src/geometry/validation.hpp
-    src/geometry/walkable_surface.cpp
-    src/geometry/walkable_surface.hpp
-    src/geometry_builder.cpp
-    src/geometry_builder.hpp
     src/hash_combine.hpp
     src/iterator_pair.hpp
     src/journey.cpp
@@ -120,6 +118,7 @@ if (BUILD_TESTS)
         test/test_floorfield.cpp
         test/test_generic_agent_formatter.cpp
         test/test_geometry.cpp
+        test/test_geometry_builder.cpp
         test/test_journey.cpp
         test/test_line_segment.cpp
         test/test_location.cpp
@@ -136,7 +135,6 @@ if (BUILD_TESTS)
         test/test_surface_mesh_shortest_path_routing_engine.cpp
         test/test_unique_id.cpp
         test/test_validation.cpp
-        test/test_walkable_surface.cpp
     )
 
     target_link_libraries(libsimulator-tests PRIVATE
@@ -157,7 +155,6 @@ if (BUILD_BENCHMARKS)
     add_executable(libsimulator-benchmarks
         benchmark/benchmark_main.cpp
         benchmark/benchmark_line_segment.hpp
-        benchmark/build_geometries.hpp
     )
 
     target_link_libraries(libsimulator-benchmarks PRIVATE

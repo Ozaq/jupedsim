@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #include "cfg_cgal.hpp"
-#include "geometry/walkable_surface.hpp"
+#include "geometry/geometry_builder.hpp"
 #include "geometry_fixtures.hpp"
 #include "simulation_error.hpp"
 
@@ -21,7 +21,7 @@ Poly make_poly(const std::vector<Point2D>& points)
 /// Checks that the seam (between regions "from" and "to") connects "a" and "b" and that the point
 /// "inside" is left to the seam (has to be in region "from").
 void expect_seam(
-    const WalkableSurface::RegionGraph2D& graph,
+    const GeometryBuilder::RegionGraph2D& graph,
     size_t from,
     size_t to,
     const Point2D& a,
@@ -43,9 +43,9 @@ void expect_seam(
 }
 } // namespace
 
-TEST(WalkableSurface, UnconnectedFloors)
+TEST(GeometryBuilder, UnconnectedFloors)
 {
-    WalkableSurface surface{};
+    GeometryBuilder surface{};
     const auto first = surface.add_region({{{0, 0}, {1, 0}, {1, 1}, {0, 1}}, {}}, 0.0);
     const auto second = surface.add_region({{{0, 0}, {1, 0}, {1, 1}, {0, 1}}, {}}, 3.0);
 
@@ -56,21 +56,21 @@ TEST(WalkableSurface, UnconnectedFloors)
     EXPECT_EQ(second, 1);
 }
 
-TEST(WalkableSurface, NonFiniteCoordinatesAreRejected)
+TEST(GeometryBuilder, NonFiniteCoordinatesAreRejected)
 {
-    const WalkableSurface::Polygon square{{{0, 0}, {1, 0}, {1, 1}, {0, 1}}, {}};
+    const GeometryBuilder::Polygon square{{{0, 0}, {1, 0}, {1, 1}, {0, 1}}, {}};
     for(const double bad :
         {std::numeric_limits<double>::infinity(), std::numeric_limits<double>::quiet_NaN()}) {
-        const WalkableSurface::Polygon with_bad_corner{{{0, 0}, {bad, 0}, {1, 1}, {0, 1}}, {}};
-        WalkableSurface surface{};
+        const GeometryBuilder::Polygon with_bad_corner{{{0, 0}, {bad, 0}, {1, 1}, {0, 1}}, {}};
+        GeometryBuilder surface{};
         EXPECT_THROW(surface.add_region(with_bad_corner, 0.0), SimulationError) << bad;
         EXPECT_THROW(surface.add_region(square, bad), SimulationError) << bad;
     }
 }
 
-TEST(WalkableSurface, PolygonRingsHaveCorrectOrientation)
+TEST(GeometryBuilder, PolygonRingsHaveCorrectOrientation)
 {
-    WalkableSurface surface{};
+    GeometryBuilder surface{};
     const auto region = surface.add_region(
         {{{0, 0}, {0, 10}, {10, 10}, {10, 0}}, {{{2, 2}, {4, 2}, {4, 4}, {2, 4}}}}, 0.0);
 
@@ -82,7 +82,7 @@ TEST(WalkableSurface, PolygonRingsHaveCorrectOrientation)
     EXPECT_EQ(poly.holes()[0], make_poly({{2, 2}, {2, 4}, {4, 4}, {4, 2}}));
 }
 
-TEST(WalkableSurface, CheckStairsPoly)
+TEST(GeometryBuilder, CheckStairsPoly)
 {
     const auto stair = test_geometries::straight_stair_to_a_landing();
     const auto* graph = stair.geometry->region_graph_2d();
@@ -93,7 +93,7 @@ TEST(WalkableSurface, CheckStairsPoly)
     EXPECT_EQ(flight.number_of_holes(), 0);
 }
 
-TEST(WalkableSurface, SeamsOfConnection)
+TEST(GeometryBuilder, SeamsOfConnection)
 {
     const auto stair = test_geometries::straight_stair_to_a_landing();
     const Point2D on_ground{5, 4};
@@ -112,9 +112,9 @@ TEST(WalkableSurface, SeamsOfConnection)
     expect_seam(*graph, stair.room_2, stair.connector, {15, 8}, {15, 0}, on_landing);
 }
 
-TEST(WalkableSurface, SeamOnHoleEdge)
+TEST(GeometryBuilder, SeamOnHoleEdge)
 {
-    WalkableSurface surface{};
+    GeometryBuilder surface{};
     const auto ground = surface.add_region(
         {{{0, 0}, {20, 0}, {20, 10}, {0, 10}},
          {{{2, 2}, {18, 2}, {18, 8}, {2, 8}, {2, 7}, {2, 3}}}},
@@ -129,4 +129,20 @@ TEST(WalkableSurface, SeamOnHoleEdge)
     EXPECT_EQ((*graph)[edge].ring, 1);
     expect_seam(*graph, ground, stairs, {2, 3}, {2, 7}, {1, 5});
     expect_seam(*graph, stairs, ground, {2, 7}, {2, 3}, {7, 5});
+}
+
+TEST(GeometryBuilder, BuildLeavesTheBuilderReusable)
+{
+    GeometryBuilder builder{};
+    const auto ground = builder.add_region({{{0, 0}, {10, 0}, {10, 10}, {0, 10}}, {}}, 0.0);
+    const GeometryBuilder& as_const = builder;
+    const auto first = as_const.build();
+    const auto again = as_const.build();
+    EXPECT_EQ(first->region_count(), 1u);
+    EXPECT_EQ(again->region_count(), 1u);
+
+    const auto upper = builder.add_region({{{14, 0}, {20, 0}, {20, 10}, {14, 10}}, {}}, 1.0);
+    builder.connect_regions(ground, {{10, 0}, {10, 10}}, upper, {{14, 0}, {14, 10}});
+    EXPECT_EQ(builder.build()->region_count(), 3u);
+    EXPECT_EQ(first->region_count(), 1u);
 }

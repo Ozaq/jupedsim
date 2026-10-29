@@ -16,7 +16,8 @@ The borders of the walkable area may not be crossed by any agent.
 Walkable area
 =============
 
-The walkable area is built with a :class:`~jupedsim.WalkableSurface` out of regions.
+The walkable area is built with a :class:`~jupedsim.GeometryBuilder` out of regions.
+Its :meth:`~jupedsim.GeometryBuilder.build` creates the :class:`~jupedsim.Geometry` that is passed to :class:`~jupedsim.Simulation`.
 Each region is one simple, i.e., non self intersecting polygon covering a non-zero area.
 It is added either as a *Shapely* :class:`~shapely.Polygon` or as a list of points describing its boundary.
 
@@ -34,17 +35,17 @@ Such a region can be added like:
     import jupedsim as jps
     import shapely
 
-    surface = jps.WalkableSurface()
-    room = surface.add_region(polygon=shapely.Polygon([(0, 0), (10, 0), (10, 10), (0, 10)]))
+    geo_builder = jps.GeometryBuilder()
+    room = geo_builder.add_region(polygon=shapely.Polygon([(0, 0), (10, 0), (10, 10), (0, 10)]), height=0.0)
 
     # or, equivalently, from the points of the boundary
-    room = surface.add_region(boundary=[(0, 0), (10, 0), (10, 10), (0, 10)])
+    room = geo_builder.add_region(boundary=[(0, 0), (10, 0), (10, 10), (0, 10)], height=0.0)
 
-:meth:`~jupedsim.WalkableSurface.add_region` returns the id of the new region.
+:meth:`~jupedsim.GeometryBuilder.add_region` returns the id of the new region.
 Agents and stages are placed in a region by this id, see :doc:`routing`.
 
 A walkable area may consist of several regions, e.g. floors at different heights joined by stairs.
-Each of them is added with its own call to :meth:`~jupedsim.WalkableSurface.add_region`.
+Each of them is added with its own call to :meth:`~jupedsim.GeometryBuilder.add_region`.
 
 Preparing polygons
 ------------------
@@ -110,15 +111,16 @@ For creating walkable areas with holes you can use:
             [(10, 1), (10, 2), (11, 2), (11, 1)],
         ],
     )
-    room = surface.add_region(polygon=walkable_area)
+    room = geo_builder.add_region(polygon=walkable_area, height=0.0)
 
     # or, equivalently, from points
-    room = surface.add_region(
+    room = geo_builder.add_region(
         boundary=[(0, 0), (20, 0), (20, 20), (0, 20)],
         holes=[
             [(1, 1), (1, 2), (2, 2), (2, 1)],
             [(10, 1), (10, 2), (11, 2), (11, 1)],
         ],
+        height=0.0,
     )
 
 Holes have to lie strictly inside the boundary.
@@ -155,12 +157,12 @@ This can be done with:
     import jupedsim as jps
 
     # define walkable area
-    surface = jps.WalkableSurface()
-    room = surface.add_region(polygon=...)
+    geo_builder = jps.GeometryBuilder()
+    room = geo_builder.add_region(polygon=..., height=0.0)
 
     simulation = jps.Simulation(
         model=jps.CollisionFreeSpeedModel(),
-        geometry=surface,
+        geometry=geo_builder.build(),
         trajectory_writer=jps.Hdf5TrajectoryWriter(
             output_file=pathlib.Path("traj.h5")
         ),

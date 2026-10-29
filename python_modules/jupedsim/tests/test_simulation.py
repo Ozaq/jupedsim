@@ -20,7 +20,7 @@ def u_stair(**simulation_args):
     """
     # (8, 9) and (13, 9) split the stairwell sides so each flight has an edge of its own.
     stairwell = [(8, 6), (14, 6), (14, 12), (8, 12), (8, 9)]
-    surface = jps.WalkableSurface()
+    surface = jps.GeometryBuilder()
     ground = surface.add_region(
         boundary=rect(0, 0, 20, 20), holes=[stairwell], height=GROUND_Z
     )
@@ -46,14 +46,14 @@ def u_stair(**simulation_args):
         "model": jps.CollisionFreeSpeedModel(),
         "dt": 0.01,
     } | simulation_args
-    return jps.Simulation(geometry=surface, **args), ground, upper
+    return jps.Simulation(geometry=surface.build(), **args), ground, upper
 
 
 def square_simulation():
-    surface = jps.WalkableSurface()
-    room = surface.add_region(boundary=rect(0, 0, 10, 10))
+    surface = jps.GeometryBuilder()
+    room = surface.add_region(boundary=rect(0, 0, 10, 10), height=0.0)
     simulation = jps.Simulation(
-        model=jps.CollisionFreeSpeedModel(), geometry=surface, dt=0.01
+        model=jps.CollisionFreeSpeedModel(), geometry=surface.build(), dt=0.01
     )
     return simulation, room
 
@@ -328,8 +328,8 @@ def test_one_exit_with_an_area_on_each_floor_is_reached_from_both():
 
 
 def test_an_exit_area_reaching_over_a_seam_stays_in_its_region():
-    surface = jps.WalkableSurface()
-    ground = surface.add_region(boundary=rect(0, 0, 10, 10))
+    surface = jps.GeometryBuilder()
+    ground = surface.add_region(boundary=rect(0, 0, 10, 10), height=0.0)
     platform = surface.add_region(boundary=rect(14, 0, 20, 10), height=1.0)
     ramp = surface.connect_regions(
         from_region=ground,
@@ -338,7 +338,7 @@ def test_an_exit_area_reaching_over_a_seam_stays_in_its_region():
         to_edge=((14, 0), (14, 10)),
     )
     sim = jps.Simulation(
-        model=jps.CollisionFreeSpeedModel(), geometry=surface, dt=0.01
+        model=jps.CollisionFreeSpeedModel(), geometry=surface.build(), dt=0.01
     )
     # The exit reaches 2 m onto the ramp, where the agent stands.
     exit_id = sim.add_exit_stage([(rect(8, 4, 12, 6), ground)])
@@ -385,3 +385,18 @@ def test_leaving_the_with_block_closes_the_simulation():
         sim.iterate()
     with pytest.raises(jps.SimulationError, match="in state Closed"):
         sim.iterate()
+
+
+def test_simulation_rejects_a_geometry_builder_and_a_used_geometry():
+    builder = jps.GeometryBuilder()
+    builder.add_region(boundary=rect(0, 0, 10, 10), height=0.0)
+    with pytest.raises(TypeError):
+        jps.Simulation(model=jps.CollisionFreeSpeedModel(), geometry=builder)
+
+    geometry = builder.build()
+    jps.Simulation(model=jps.CollisionFreeSpeedModel(), geometry=geometry)
+    with pytest.raises(ValueError, match="disowned"):
+        jps.Simulation(model=jps.CollisionFreeSpeedModel(), geometry=geometry)
+    jps.Simulation(
+        model=jps.CollisionFreeSpeedModel(), geometry=builder.build()
+    )

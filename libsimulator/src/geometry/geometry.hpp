@@ -16,7 +16,7 @@
 #include <optional>
 #include <vector>
 
-class WalkableSurface;
+class GeometryBuilder;
 
 /// Default tolerance of get_location_near_z: how far the surface may lie from the given z.
 inline constexpr double near_z_tolerance = 0.1;
@@ -51,7 +51,7 @@ public:
 
     /// 3D mesh. Perform auto-split into regions.
     explicit Geometry(SurfaceMesh mesh);
-    /// Special constructor for WalkableSurface: Ensures consistency of parameters.
+    /// Special constructor for GeometryBuilder: Ensures consistency of parameters.
     explicit Geometry(
         SurfaceMesh&& mesh,
         RegionSplit&& region_split,
@@ -73,7 +73,7 @@ public:
     PolyWithHoles polygon(size_t region_id) const;
 
     /// The exact 2D footprint of every region and the seams between them, as authored.
-    /// `nullptr` unless the geometry was built by `WalkableSurface`.
+    /// `nullptr` unless the geometry was built by `GeometryBuilder`.
     const RegionGraph2D* region_graph_2d() const { return _region_graph_2d.get(); }
 
     /// Face and on-surface point hit by the -z ray through @p p, or

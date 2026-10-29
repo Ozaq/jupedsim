@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #pragma once
 
-#include "geometry/walkable_surface.hpp"
+#include "geometry/geometry_builder.hpp"
 #include "line_segment.hpp"
 #include "point.hpp"
 #include "unique_id.hpp"
@@ -160,8 +160,8 @@ inline std::optional<object> optional_attr(handle h, const char* name)
 } // namespace
 
 template <>
-struct type_caster<WalkableSurface::Polygon> {
-    PYBIND11_TYPE_CASTER(WalkableSurface::Polygon, const_name("shapely.Polygon"));
+struct type_caster<GeometryBuilder::Polygon> {
+    PYBIND11_TYPE_CASTER(GeometryBuilder::Polygon, const_name("shapely.Polygon"));
 
     bool load(handle src, bool convert)
     {
@@ -174,24 +174,24 @@ struct type_caster<WalkableSurface::Polygon> {
         if(!boundary_coords) {
             return false;
         }
-        auto caster = make_caster<WalkableSurface::Ring>();
+        auto caster = make_caster<GeometryBuilder::Ring>();
         if(!caster.load(*boundary_coords, convert)) {
             return false;
         }
-        value.boundary = cast_op<WalkableSurface::Ring&&>(std::move(caster));
+        value.boundary = cast_op<GeometryBuilder::Ring&&>(std::move(caster));
 
-        std::vector<WalkableSurface::Ring> holes{};
+        std::vector<GeometryBuilder::Ring> holes{};
         holes.reserve(len(*interiors));
         for(auto ring : *interiors) {
             auto hole_coords = optional_attr(ring, "coords");
             if(!hole_coords) {
                 return false;
             }
-            auto caster = make_caster<WalkableSurface::Ring>();
+            auto caster = make_caster<GeometryBuilder::Ring>();
             if(!caster.load(*hole_coords, convert)) {
                 return false;
             }
-            holes.emplace_back(cast_op<WalkableSurface::Ring&&>(std::move(caster)));
+            holes.emplace_back(cast_op<GeometryBuilder::Ring&&>(std::move(caster)));
         }
 
         value.holes = std::move(holes);

@@ -2,7 +2,7 @@
 #include "cfg_cgal.hpp"
 #include "geometry/area_piece.hpp"
 #include "geometry/geometry.hpp"
-#include "geometry/walkable_surface.hpp"
+#include "geometry/geometry_builder.hpp"
 #include "geometry_fixtures.hpp"
 #include "line_segment.hpp"
 #include "point.hpp"
@@ -247,7 +247,7 @@ TEST(GeometryVisibility, TheFloorAboveIsNotInSightThoughNothingStandsBetween)
     EXPECT_FALSE(floors.geometry->no_geometry_between(*below, *above));
 }
 
-TEST(GeometryVisibility, CrossingASeamOntoWalkableSurfaceDoesNotBlock)
+TEST(GeometryVisibility, CrossingASeamOntoTheSurfaceDoesNotBlock)
 {
     const auto floors = test_geometries::switchback_stair();
     const auto who = floors.geometry->get_location_near_z(12.0, 2.0, 1.5, 0.5);

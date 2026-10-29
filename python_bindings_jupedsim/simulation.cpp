@@ -5,8 +5,8 @@
 #include "floorfield_routing_engine.hpp"
 #include "generic_agent.hpp"
 #include "geometry/geometry.hpp"
+#include "geometry/geometry_builder.hpp"
 #include "geometry/location.hpp"
-#include "geometry/walkable_surface.hpp"
 #include "journey.hpp"
 #include "operational_model.hpp"
 #include "operational_model_state.hpp"
@@ -40,11 +40,11 @@ namespace py = pybind11;
 
 namespace
 {
-using Area = std::variant<WalkableSurface::Polygon, std::vector<Point>>;
+using Area = std::variant<GeometryBuilder::Polygon, std::vector<Point>>;
 
 std::vector<Point> boundary_without_holes(Area area)
 {
-    if(auto* polygon = std::get_if<WalkableSurface::Polygon>(&area)) {
+    if(auto* polygon = std::get_if<GeometryBuilder::Polygon>(&area)) {
         if(!polygon->holes.empty()) {
             throw py::value_error("Polygon must not have holes");
         }

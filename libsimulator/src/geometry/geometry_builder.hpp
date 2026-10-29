@@ -17,7 +17,7 @@
 
 class Geometry;
 
-class WalkableSurface
+class GeometryBuilder
 {
 public:
     using Ring = std::vector<Point>;
@@ -32,7 +32,9 @@ public:
     using RegionGraph2D = Geometry::RegionGraph2D;
     std::unique_ptr<RegionGraph2D> create_region_graph_2d() const;
 
-    std::unique_ptr<Geometry> create_geometry();
+    /// Creates the geometry from the regions and connections added so far. The builder is
+    /// left unchanged, so it can be extended and built again.
+    std::unique_ptr<Geometry> build() const;
 
 private:
     std::vector<Point3D> _global_vertices;
@@ -65,14 +67,17 @@ private:
 
     /// Check whether floors at specified height overlap. Throws in case of error.
     void validate_floor_overlap(const PolyWithHoles& poly_with_holes, double height) const;
+
+    /// Checks the input as a whole before the geometry is created. Throws SimulationError.
+    void validate() const;
 };
 
 template <>
-struct fmt::formatter<WalkableSurface::Polygon> {
+struct fmt::formatter<GeometryBuilder::Polygon> {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
 
     template <typename FormatContext>
-    auto format(const WalkableSurface::Polygon& p, FormatContext& ctx) const
+    auto format(const GeometryBuilder::Polygon& p, FormatContext& ctx) const
     {
         return fmt::format_to(ctx.out(), "({}, {})", p.boundary, p.holes);
     }
