@@ -67,7 +67,7 @@ TEST(GeometryLocate, FlatRegionYieldsGroundHeight)
     ASSERT_EQ(room.geometry->region_count(), 1);
 
     const auto loc = room.geometry->locate_in_region(room.room_id, {5, 5});
-    ASSERT_NE(loc.face, SurfaceMesh::null_face());
+    ASSERT_NE(loc.face, epick::Mesh::null_face());
     EXPECT_NEAR(loc.point.z(), 0.0, 1e-9);
     EXPECT_NEAR(loc.point.x(), 5.0, 1e-9);
     EXPECT_NEAR(loc.point.y(), 5.0, 1e-9);
@@ -77,7 +77,7 @@ TEST(GeometryLocate, PointOutsideRegionFootprintMisses)
 {
     const auto floors = test_geometries::stacked_floors({0, 0}, {10, 10}, 3.0);
     EXPECT_EQ(
-        floors.geometry->locate_in_region(floors.room_1, {20, 20}).face, SurfaceMesh::null_face());
+        floors.geometry->locate_in_region(floors.room_1, {20, 20}).face, epick::Mesh::null_face());
 }
 
 TEST(GeometryLocate, RampInterpolatesHeightOnFace)

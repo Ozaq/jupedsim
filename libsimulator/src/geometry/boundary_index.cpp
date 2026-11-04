@@ -616,14 +616,14 @@ std::vector<LineSegment> PortalBoundaryIndex::query(const Location& loc, double 
 // Factories
 //==================================================================================================
 std::unique_ptr<BoundaryIndex>
-make_naive_boundary_index(const SurfaceMesh& mesh, const RegionSplit& region_split)
+make_naive_boundary_index(const epick::Mesh& mesh, const RegionSplit& region_split)
 {
     auto boundaries = create_per_region_segment_grids(mesh, region_split);
     return std::make_unique<NaiveBoundaryIndex>(std::move(boundaries));
 }
 
 std::unique_ptr<BoundaryIndex>
-make_portal_boundary_index(const SurfaceMesh& mesh, const RegionSplit& region_split)
+make_portal_boundary_index(const epick::Mesh& mesh, const RegionSplit& region_split)
 {
     auto g = create_region_graph(mesh, region_split);
     return std::make_unique<PortalBoundaryIndex>(std::move(g));
@@ -632,8 +632,8 @@ make_portal_boundary_index(const SurfaceMesh& mesh, const RegionSplit& region_sp
 //==================================================================================================
 // Supporting code
 //==================================================================================================
-std::tuple<SurfaceMesh::Face_index, SurfaceMesh::Halfedge_index>
-incident_face_and_halfedge(const SurfaceMesh& mesh, SurfaceMesh::Edge_index e)
+std::tuple<epick::Mesh::Face_index, epick::Mesh::Halfedge_index>
+incident_face_and_halfedge(const epick::Mesh& mesh, epick::Mesh::Edge_index e)
 {
     auto h = mesh.halfedge(e, 0);
     if(mesh.is_border(h)) {
@@ -646,7 +646,7 @@ incident_face_and_halfedge(const SurfaceMesh& mesh, SurfaceMesh::Edge_index e)
 }
 
 std::vector<SegmentGrid>
-create_per_region_segment_grids(const SurfaceMesh& mesh, const RegionSplit& region_split)
+create_per_region_segment_grids(const epick::Mesh& mesh, const RegionSplit& region_split)
 {
     std::vector<std::vector<LineSegment>> elements{};
     elements.resize(region_split.count);
@@ -672,7 +672,7 @@ create_per_region_segment_grids(const SurfaceMesh& mesh, const RegionSplit& regi
 }
 
 std::unique_ptr<RegionGraph>
-create_region_graph(const SurfaceMesh& mesh, const RegionSplit& region_split)
+create_region_graph(const epick::Mesh& mesh, const RegionSplit& region_split)
 {
     std::vector<std::vector<LineSegment>> elements{};
     elements.resize(region_split.count);

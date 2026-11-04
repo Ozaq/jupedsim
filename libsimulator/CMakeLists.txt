@@ -11,14 +11,14 @@ target_sources(simulator PRIVATE
     src/agent_removal_system.hpp
     src/agent_view.hpp
     src/cfg_cgal.hpp
+    src/destination.cpp
+    src/destination.hpp
     src/ellipse.cpp
     src/ellipse.hpp
     src/floorfield_routing_engine.cpp
     src/floorfield_routing_engine.hpp
     src/generic_agent.hpp
     src/geometric_functions.hpp
-    src/destination.cpp
-    src/destination.hpp
     src/geometry/area_piece.hpp
     src/geometry/boundary_index.cpp
     src/geometry/boundary_index.hpp
@@ -39,6 +39,7 @@ target_sources(simulator PRIVATE
     src/geometry/validation.cpp
     src/geometry/validation.hpp
     src/hash_combine.hpp
+    src/into.hpp
     src/iterator_pair.hpp
     src/journey.cpp
     src/journey.hpp

@@ -53,7 +53,7 @@ def two_floors():
 def test_add_region_too_few_points(boundary, holes):
     builder = jps.GeometryBuilder()
     with pytest.raises(
-        jps.SimulationError, match="needs at least 3 different points"
+        jps.SimulationError, match="Invalid polygon provided to add_region"
     ):
         builder.add_region(boundary=boundary, holes=holes, height=0.0)
 
@@ -63,11 +63,6 @@ def test_add_region_too_few_points(boundary, holes):
     [
         pytest.param([(0, 0), (1, 1), (1, 2), (1, 1)], [], id="no-area"),
         pytest.param([(0, 0), (1, 1), (0, 1), (1, 0)], [], id="bowtie"),
-        pytest.param(
-            [(0, 0), (1, 0), (1, 1), (2, 1), (2, 2), (1, 2), (1, 1), (0, 1)],
-            [],
-            id="boundary-touches-itself-at-vertex",
-        ),
         pytest.param(
             [(0, 0), (4, 0), (4, 4), (3, 4), (2, 0), (1, 4), (0, 4)],
             [],
@@ -87,8 +82,18 @@ def test_add_region_too_few_points(boundary, holes):
 )
 def test_add_region_not_simple(boundary, holes):
     builder = jps.GeometryBuilder()
-    with pytest.raises(jps.SimulationError, match="is not simple"):
+    with pytest.raises(
+        jps.SimulationError, match="Invalid polygon provided to add_region"
+    ):
         builder.add_region(boundary=boundary, holes=holes, height=0.0)
+
+
+def test_add_region_boundary_touches_itself_at_vertex():
+    # Passes CGAL's polygon validity check, is caught by the is_simple check.
+    builder = jps.GeometryBuilder()
+    boundary = [(0, 0), (1, 0), (1, 1), (2, 1), (2, 2), (1, 2), (1, 1), (0, 1)]
+    with pytest.raises(jps.SimulationError, match="is not simple"):
+        builder.add_region(boundary=boundary, height=0.0)
 
 
 def test_overlapping_geometry():
@@ -169,7 +174,9 @@ def test_add_region_invalid_holes(boundary, holes):
 def test_gets_region_after_error_and_can_build():
     builder = jps.GeometryBuilder()
     polygon = [(0, 0), (1, 1), (0, 1), (1, 0)]
-    with pytest.raises(jps.SimulationError, match="is not simple"):
+    with pytest.raises(
+        jps.SimulationError, match="Invalid polygon provided to add_region"
+    ):
         builder.add_region(boundary=polygon, height=0.0)
     region_id = builder.add_region(
         boundary=rectangle((0, 0), (1, 1)), height=0.0

@@ -13,9 +13,9 @@
 
 namespace
 {
-Poly make_poly(const std::vector<Point2D>& points)
+epick::Poly make_poly(const std::vector<epick::Point2D>& points)
 {
-    return Poly(std::begin(points), std::end(points));
+    return epick::Poly(std::begin(points), std::end(points));
 }
 
 /// Checks that the seam (between regions "from" and "to") connects "a" and "b" and that the point
@@ -24,20 +24,21 @@ void expect_seam(
     const GeometryBuilder::RegionGraph2D& graph,
     size_t from,
     size_t to,
-    const Point2D& a,
-    const Point2D& b,
-    const Point2D& inside)
+    const epick::Point2D& a,
+    const epick::Point2D& b,
+    const epick::Point2D& inside)
 {
     const auto [edge, exists] = boost::edge(from, to, graph);
     ASSERT_TRUE(exists);
     const auto& seam = graph[edge];
-    const PolyWithHoles& poly = graph[from];
+    const epick::PolyWithHoles& poly = graph[from];
     ASSERT_LE(seam.ring, poly.number_of_holes());
-    const Poly& ring = (seam.ring == 0) ? poly.outer_boundary() : poly.holes()[seam.ring - 1];
+    const epick::Poly& ring =
+        (seam.ring == 0) ? poly.outer_boundary() : poly.holes()[seam.ring - 1];
     ASSERT_LT(seam.index, ring.size());
 
-    const Point2D& source = ring.vertex(seam.index);
-    const Point2D& target = ring.vertex((seam.index + 1) % ring.size());
+    const epick::Point2D& source = ring.vertex(seam.index);
+    const epick::Point2D& target = ring.vertex((seam.index + 1) % ring.size());
     EXPECT_TRUE(source == a && target == b);
     EXPECT_EQ(CGAL::orientation(source, target, inside), CGAL::LEFT_TURN);
 }
@@ -68,6 +69,40 @@ TEST(GeometryBuilder, NonFiniteCoordinatesAreRejected)
     }
 }
 
+TEST(GeometryBuilder, ClosedRingsAreRejected)
+{
+    const GeometryBuilder::Ring closed{{0, 0}, {1, 0}, {1, 1}, {0, 0}};
+    const GeometryBuilder::Ring outer{{-1, -1}, {2, -1}, {2, 2}, {-1, 2}};
+    GeometryBuilder surface{};
+    EXPECT_THROW(surface.add_region({closed, {}}, 0.0), SimulationError);
+    EXPECT_THROW(surface.add_region({outer, {closed}}, 0.0), SimulationError);
+}
+
+template <typename Kernel>
+void expect_polygon_converted_verbatim()
+{
+    using Point2 = CGAL::Point_2<Kernel>;
+    using Ring2 = CGAL::Polygon_2<Kernel>;
+    const auto ring = [](const std::vector<Point2>& points) {
+        return Ring2(std::begin(points), std::end(points));
+    };
+    // Boundary clockwise and hole counterclockwise: the wrong way around for CGAL.
+    const GeometryBuilder::Polygon polygon{
+        {{0, 0}, {0, 10}, {10, 10}, {10, 0}}, {{{2, 2}, {4, 2}, {4, 4}, {2, 4}}}};
+
+    const auto converted = into<CGAL::Polygon_with_holes_2<Kernel>>(polygon);
+
+    EXPECT_EQ(converted.outer_boundary(), ring({{0, 0}, {0, 10}, {10, 10}, {10, 0}}));
+    ASSERT_EQ(converted.number_of_holes(), 1);
+    EXPECT_EQ(converted.holes()[0], ring({{2, 2}, {4, 2}, {4, 4}, {2, 4}}));
+}
+
+TEST(GeometryBuilder, PolygonConvertsVerbatim)
+{
+    expect_polygon_converted_verbatim<epick::Kernel>();
+    expect_polygon_converted_verbatim<epeck::Kernel>();
+}
+
 TEST(GeometryBuilder, PolygonRingsHaveCorrectOrientation)
 {
     GeometryBuilder surface{};
@@ -75,7 +110,7 @@ TEST(GeometryBuilder, PolygonRingsHaveCorrectOrientation)
         {{{0, 0}, {0, 10}, {10, 10}, {10, 0}}, {{{2, 2}, {4, 2}, {4, 4}, {2, 4}}}}, 0.0);
 
     const auto graph = surface.create_region_graph_2d();
-    const PolyWithHoles& poly = (*graph)[region];
+    const epick::PolyWithHoles& poly = (*graph)[region];
     // boundary should be counterclockwise, hole clockwise.
     EXPECT_EQ(poly.outer_boundary(), make_poly({{0, 0}, {10, 0}, {10, 10}, {0, 10}}));
     ASSERT_EQ(poly.number_of_holes(), 1);
@@ -88,7 +123,7 @@ TEST(GeometryBuilder, CheckStairsPoly)
     const auto* graph = stair.geometry->region_graph_2d();
     ASSERT_NE(graph, nullptr);
     ASSERT_EQ(boost::num_vertices(*graph), 3);
-    const PolyWithHoles& flight = (*graph)[stair.connector];
+    const epick::PolyWithHoles& flight = (*graph)[stair.connector];
     EXPECT_EQ(flight.outer_boundary(), make_poly({{10, 0}, {15, 0}, {15, 8}, {10, 8}}));
     EXPECT_EQ(flight.number_of_holes(), 0);
 }
@@ -96,9 +131,9 @@ TEST(GeometryBuilder, CheckStairsPoly)
 TEST(GeometryBuilder, SeamsOfConnection)
 {
     const auto stair = test_geometries::straight_stair_to_a_landing();
-    const Point2D on_ground{5, 4};
-    const Point2D on_flight{12.5, 4};
-    const Point2D on_landing{17.5, 4};
+    const epick::Point2D on_ground{5, 4};
+    const epick::Point2D on_flight{12.5, 4};
+    const epick::Point2D on_landing{17.5, 4};
 
     const auto* graph = stair.geometry->region_graph_2d();
     ASSERT_NE(graph, nullptr);

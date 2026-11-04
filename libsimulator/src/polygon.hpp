@@ -16,7 +16,7 @@
 
 class Polygon
 {
-    using PolygonType = Poly;
+    using PolygonType = epick::Poly;
 
     PolygonType _polygon;
 
@@ -38,10 +38,10 @@ public:
 
 template <std::ranges::input_range R1, std::ranges::input_range R2>
     requires std::same_as<std::ranges::range_value_t<R1>, std::ranges::range_value_t<R2>>
-PolyWithHoles combine_polygons(R1&& polygons, R2&& exclusions)
+epick::PolyWithHoles combine_polygons(R1&& polygons, R2&& exclusions)
 {
 
-    PolyWithHolesList accessible_list{};
+    epick::PolyWithHolesList accessible_list{};
     CGAL::join(std::begin(polygons), std::end(polygons), std::back_inserter(accessible_list));
 
     if(accessible_list.size() != 1) {
@@ -50,11 +50,11 @@ PolyWithHoles combine_polygons(R1&& polygons, R2&& exclusions)
 
     auto combined_area = *accessible_list.begin();
 
-    PolyWithHolesList exclusions_list{};
+    epick::PolyWithHolesList exclusions_list{};
     CGAL::join(std::begin(exclusions), std::end(exclusions), std::back_inserter(exclusions_list));
 
     for(const auto& ex : exclusions_list) {
-        PolyWithHolesList res{};
+        epick::PolyWithHolesList res{};
         CGAL::difference(combined_area, ex, std::back_inserter(res));
         if(res.size() != 1) {
             throw SimulationError("Exclusions splits combined polygon.");
@@ -65,4 +65,4 @@ PolyWithHoles combine_polygons(R1&& polygons, R2&& exclusions)
 }
 
 /// Throws if @p polygon is empty.
-std::string as_wkt(const PolyWithHoles& polygon);
+std::string as_wkt(const epick::PolyWithHoles& polygon);

@@ -28,7 +28,7 @@ namespace ff = jupedsim::floorfield;
 
 namespace
 {
-ff::Ring to_ring(const Poly& poly)
+ff::Ring to_ring(const epick::Poly& poly)
 {
     ff::Ring ring{};
     for(const auto& p : poly.container()) {
@@ -44,7 +44,7 @@ ff::RegionGraph to_floorfield(const Geometry::RegionGraph2D& g)
 {
     ff::RegionGraph out{};
     for(const auto r : boost::make_iterator_range(boost::vertices(g))) {
-        const PolyWithHoles& poly = g[r];
+        const epick::PolyWithHoles& poly = g[r];
         ff::Region region{};
         region.outer = to_ring(poly.outer_boundary());
         for(const auto& hole : poly.holes()) {
@@ -197,8 +197,8 @@ TEST(Floorfield, ExitSpanningSeveralRegions)
 {
     const auto rooms = test_geometries::two_rooms();
     const auto& geo = rooms.geometry;
-    const std::vector<Point2D> corners{{9.5, 4}, {11.5, 4}, {11.5, 6}, {9.5, 6}};
-    const Poly exit(corners.begin(), corners.end());
+    const std::vector<epick::Point2D> corners{{9.5, 4}, {11.5, 4}, {11.5, 6}, {9.5, 6}};
+    const epick::Poly exit(corners.begin(), corners.end());
 
     std::vector<ff::AreaPiece> ff_pieces{};
     for(const std::size_t region : {0, 1, 2}) {
@@ -282,9 +282,9 @@ TEST(Floorfield, ComparedWithTheExactGeodesic)
         const char* name;
         std::unique_ptr<Geometry> geo;
         std::size_t from_region;
-        Point3D from;
+        epick::Point3D from;
         std::size_t to_region;
-        Point3D to;
+        epick::Point3D to;
     };
     std::vector<Case> cases{};
     auto floors = test_geometries::floors_joined_by_stairs();

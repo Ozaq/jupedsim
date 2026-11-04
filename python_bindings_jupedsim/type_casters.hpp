@@ -157,6 +157,14 @@ inline std::optional<object> optional_attr(handle h, const char* name)
     }
     return a;
 }
+
+/// Shapely rings repeat their first vertex as their last, GeometryBuilder rings must not.
+inline void drop_closing_vertex(GeometryBuilder::Ring& ring)
+{
+    if(ring.size() > 1 && (ring.back() - ring.front()).is_zero_length()) {
+        ring.pop_back();
+    }
+}
 } // namespace
 
 template <>
@@ -179,6 +187,7 @@ struct type_caster<GeometryBuilder::Polygon> {
             return false;
         }
         value.boundary = cast_op<GeometryBuilder::Ring&&>(std::move(caster));
+        drop_closing_vertex(value.boundary);
 
         std::vector<GeometryBuilder::Ring> holes{};
         holes.reserve(len(*interiors));
@@ -192,6 +201,7 @@ struct type_caster<GeometryBuilder::Polygon> {
                 return false;
             }
             holes.emplace_back(cast_op<GeometryBuilder::Ring&&>(std::move(caster)));
+            drop_closing_vertex(holes.back());
         }
 
         value.holes = std::move(holes);

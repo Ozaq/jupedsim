@@ -13,7 +13,7 @@ namespace py = pybind11;
 
 void init_geometry(py::module_& m)
 {
-    py::class_<PolyWithHoles> polygon2d(m, "Polygon2D");
+    py::class_<epick::PolyWithHoles> polygon2d(m, "Polygon2D");
     polygon2d.doc() = clean_doc(R"(
         A polygon with holes in the (x, y) plane, e.g. the walkable area of one region.
     )");

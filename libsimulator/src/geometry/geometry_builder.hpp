@@ -37,7 +37,9 @@ public:
     std::unique_ptr<Geometry> build() const;
 
 private:
-    std::vector<Point3D> _global_vertices;
+    /// Minimum clearance around each vertex in meters.
+    static constexpr double min_clearance{0.025};
+    std::vector<epick::Point3D> _global_vertices;
 
     struct Region {
         // Store boundary (index 0) + holes as vector of indices into globalVertices
@@ -45,7 +47,7 @@ private:
         /// Empty for connectors, which are inclined instead of flat.
         std::optional<double> height;
         /// Polygons projected to x/y.
-        PolyWithHoles poly_with_holes;
+        epick::PolyWithHoles poly_with_holes;
 
         /// Connectors may not be connected again.
         bool is_connectable() const { return height.has_value(); }
@@ -58,18 +60,38 @@ private:
         boost::adjacency_list<boost::vecS, boost::vecS, boost::directedS, Region, Seam>;
     RegionGraph _region_graph{};
 
-    size_t insert_region(
-        std::vector<std::vector<size_t>> polygons,
-        const std::vector<Point3D>& vertices,
-        double height);
-
     std::array<size_t, 2> find_edge(size_t region_id, const LineSegment& edge) const;
 
     /// Check whether floors at specified height overlap. Throws in case of error.
-    void validate_floor_overlap(const PolyWithHoles& poly_with_holes, double height) const;
+    void validate_floor_overlap(const epick::PolyWithHoles& poly_with_holes, double height) const;
 
     /// Checks the input as a whole before the geometry is created. Throws SimulationError.
     void validate() const;
+};
+
+/// Converts a Polygon into a CGAL polygon with holes.
+/// Copies the rings verbatim: they are neither checked nor reoriented, so the result only has the
+/// winding CGAL expects if @p polygon has it.
+template <typename Kernel>
+struct Convert<GeometryBuilder::Polygon, CGAL::Polygon_with_holes_2<Kernel>> {
+    static CGAL::Polygon_with_holes_2<Kernel> from(const GeometryBuilder::Polygon& polygon)
+    {
+        const auto convert_ring = [](const GeometryBuilder::Ring& ring) {
+            CGAL::Polygon_2<Kernel> converted{};
+            for(const Point& point : ring) {
+                converted.push_back(into<CGAL::Point_2<Kernel>>(point));
+            }
+            return converted;
+        };
+
+        std::vector<CGAL::Polygon_2<Kernel>> holes{};
+        holes.reserve(polygon.holes.size());
+        for(const auto& hole : polygon.holes) {
+            holes.emplace_back(convert_ring(hole));
+        }
+        return CGAL::Polygon_with_holes_2<Kernel>(
+            convert_ring(polygon.boundary), std::begin(holes), std::end(holes));
+    }
 };
 
 template <>
