@@ -59,6 +59,30 @@ def test_an_agent_follows_its_route_and_is_recorded_on_the_way():
         r.sim.agent("anna")
 
 
+def test_an_unnamed_agent_has_the_empty_name():
+    r = _Room()
+    agent = r.sim.add_agent(r.at(5, 5), route=r.route)
+    assert agent.name == ""
+    assert repr(agent) == f"Agent(id={agent.id})"
+
+
+def test_the_empty_name_names_no_agent():
+    r = _Room()
+    r.sim.add_agent(r.at(5, 5), route=r.route, name="")
+    r.sim.add_agent(r.at(5, 7), route=r.route, name="")
+    with pytest.raises(KeyError, match="no agent named ''"):
+        r.sim.agent("")
+
+
+def test_a_foreign_unnamed_agent_is_named_by_its_id_alone():
+    r, other = _Room(), _Room()
+    foreign = other.sim.add_agent(other.at(5, 5), route=other.route)
+    with pytest.raises(
+        ValueError, match=rf"^Agent {foreign.id} belongs to another simulation"
+    ):
+        r.sim.mark_agent_for_removal(foreign)
+
+
 def test_records_cover_all_iterations_of_one_iterate_call():
     r = _Room()
     for x, y in ((3.1, 4.5), (3.3, 5.5)):

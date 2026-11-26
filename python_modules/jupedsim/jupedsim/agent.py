@@ -113,9 +113,9 @@ class Agent:
         return self._id
 
     @property
-    def name(self) -> str | None:
-        """Name of the agent or ``None``."""
-        return self._simulation._obj.agent_name(self._id)
+    def name(self) -> str:
+        """Name of the agent; empty if it has none."""
+        return self._resolve().name
 
     @property
     def route(self) -> Route | None:
@@ -237,6 +237,6 @@ class Agent:
 
     def __repr__(self) -> str:
         name = self.name
-        if name is None:
+        if not name:
             return f"Agent(id={self._id})"
         return f"Agent(id={self._id}, name={name!r})"

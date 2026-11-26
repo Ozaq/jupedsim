@@ -130,10 +130,8 @@ void Simulation::iterate()
         std::swap(_removals, _marked_for_removal);
         if(!_removals.empty()) {
             for(const auto& removal : _removals) {
-                if(const auto named = _agent_names.find(removal.agent_id);
-                   named != std::end(_agent_names)) {
-                    _agent_ids_by_name.erase(named->second);
-                    _agent_names.erase(named);
+                if(const auto& name = agent(removal.agent_id).name; !name.empty()) {
+                    _agent_ids_by_name.erase(name);
                 }
             }
             _agent_removal_system.run(_agents, _stage_manager);
@@ -234,7 +232,7 @@ GenericAgent::ID Simulation::add_agent(
     Route::ID route_id,
     std::optional<BaseStage::ID> first_stage,
     OperationalModelState model,
-    std::optional<std::string> name)
+    std::string name)
 {
     throw_if_state(State::Iterating | State::Closed, "add_agent");
     JPS_SCOPED_TIMER_AND_TRACE(_timer, "Add Agent", Detailed);
@@ -247,18 +245,19 @@ GenericAgent::ID Simulation::add_agent(
         Route::ID::invalid,
         BaseStage::ID::invalid,
         location,
-        std::move(model)};
+        std::move(model),
+        std::move(name)};
     validate_new_agent(agent);
     // Only now, so that a rejected agent takes no turn in the route's first transition.
     follow(agent, route_id, stage != nullptr ? *stage : *route.first_stage());
-    return emplace_agent(std::move(agent), std::move(name));
+    return emplace_agent(std::move(agent));
 }
 
 GenericAgent::ID Simulation::add_agent(
     const Location& location,
     const Location& steer_to,
     OperationalModelState model,
-    std::optional<std::string> name)
+    std::string name)
 {
     throw_if_state(State::Iterating | State::Closed, "add_agent");
     JPS_SCOPED_TIMER_AND_TRACE(_timer, "Add Agent", Detailed);
@@ -270,10 +269,11 @@ GenericAgent::ID Simulation::add_agent(
         Route::ID::invalid,
         BaseStage::ID::invalid,
         location,
-        std::move(model)};
+        std::move(model),
+        std::move(name)};
     agent.current_target = steer_to;
     validate_new_agent(agent);
-    return emplace_agent(std::move(agent), std::move(name));
+    return emplace_agent(std::move(agent));
 }
 
 void Simulation::validate_new_agent(const GenericAgent& agent) const
@@ -289,18 +289,11 @@ void Simulation::validate_new_agent(const GenericAgent& agent) const
     _operational_decision_system.validate_agent(agent, _neighborhood_search, *_geometry);
 }
 
-void Simulation::check_agent_name(const std::optional<std::string>& name) const
+void Simulation::check_agent_name(const std::string& name) const
 {
-    if(name && agent_named(*name)) {
-        throw SimulationError("The agent name '{}' is already used.", *name);
+    if(!name.empty() && agent_named(name)) {
+        throw SimulationError("The agent name '{}' is already used.", name);
     }
-}
-
-std::optional<std::string> Simulation::agent_name(GenericAgent::ID id) const
-{
-    throw_if_state(State::Closed, "agent_name");
-    const auto iter = _agent_names.find(id);
-    return iter == std::end(_agent_names) ? std::nullopt : std::optional{iter->second};
 }
 
 std::optional<GenericAgent::ID> Simulation::agent_named(const std::string& name) const
@@ -310,13 +303,12 @@ std::optional<GenericAgent::ID> Simulation::agent_named(const std::string& name)
     return iter == std::end(_agent_ids_by_name) ? std::nullopt : std::optional{iter->second};
 }
 
-GenericAgent::ID Simulation::emplace_agent(GenericAgent&& agent, std::optional<std::string> name)
+GenericAgent::ID Simulation::emplace_agent(GenericAgent&& agent)
 {
     // Only once validated, so that a rejected agent takes no stream from the sequence.
     _operational_decision_system.seed_agent_state(agent.state);
-    if(name) {
-        _agent_ids_by_name.emplace(*name, agent.id);
-        _agent_names.emplace(agent.id, std::move(*name));
+    if(!agent.name.empty()) {
+        _agent_ids_by_name.emplace(agent.name, agent.id);
     }
     _agents.emplace_back(std::move(agent));
     assert(sorted_by_id(_agents));
@@ -376,7 +368,7 @@ GenericAgent& Simulation::reroutable(GenericAgent::ID agent_id)
         throw SimulationError(
             "Agent {} leaves the simulation at the beginning of the next iteration; it cannot be "
             "rerouted.",
-            id_and_name(agent_id, agent_name(agent_id)));
+            id_and_name(agent_id, agent.name.empty() ? std::nullopt : std::optional{agent.name}));
     }
     return agent;
 }

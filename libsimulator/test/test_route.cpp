@@ -450,6 +450,23 @@ TEST_F(FollowRoute, AnAgentNameIsFreeAgainOnceItsAgentHasLeft)
     EXPECT_NO_THROW(_sim.add_agent(at({5, 5}), route, {}, State{}, "anna"));
 }
 
+TEST_F(FollowRoute, AnAgentCarriesItsName)
+{
+    const auto route = _sim.add_route({fixed({}, waypoint({15, 15}))});
+    const auto named = _sim.add_agent(at({2, 2}), route, {}, State{}, "anna");
+    const auto unnamed = add_agent({5, 5}, route);
+    EXPECT_EQ(_sim.agent(named).name, "anna");
+    EXPECT_EQ(_sim.agent(unnamed).name, "");
+}
+
+TEST_F(FollowRoute, TheEmptyNameNamesNoAgent)
+{
+    const auto route = _sim.add_route({fixed({}, waypoint({15, 15}))});
+    _sim.add_agent(at({2, 2}), route, {}, State{}, "");
+    EXPECT_NO_THROW(_sim.add_agent(at({5, 5}), route, {}, State{}, ""));
+    EXPECT_EQ(_sim.agent_named(""), std::nullopt);
+}
+
 TEST_F(FollowRoute, RerouteWithinTheRouteJumpsToTheStage)
 {
     const auto wp1 = waypoint({2, 2});

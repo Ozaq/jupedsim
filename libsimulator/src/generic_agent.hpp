@@ -20,6 +20,7 @@
 #include <boost/container/options.hpp>
 #include <fmt/core.h>
 
+#include <string>
 #include <utility>
 #include <variant>
 class Route;
@@ -28,6 +29,8 @@ class BaseStage;
 struct GenericAgent {
     using ID = jps::UniqueID<GenericAgent>;
     ID id{};
+    /// Unique among the agents of a simulation; empty if the agent has no name.
+    std::string name;
 
     /// Invalid, as is stage_id, while the agent is steered to the location in current_target.
     jps::UniqueID<Route> route_id{jps::UniqueID<Route>::invalid};
@@ -54,8 +57,10 @@ struct GenericAgent {
         jps::UniqueID<Route> route_id,
         jps::UniqueID<BaseStage> stage_id,
         Location location,
-        OperationalModelState state)
+        OperationalModelState state,
+        std::string name = {})
         : id(id != ID::invalid ? id : ID{})
+        , name(std::move(name))
         , route_id(route_id)
         , stage_id(stage_id)
         , location(location)
@@ -109,9 +114,11 @@ struct fmt::formatter<GenericAgent> {
             [&ctx, &agent](const auto& m) {
                 return fmt::format_to(
                     ctx.out(),
-                    "Agent[id={}, route={}, stage={}, route_orientation={}, target={}, pos={}, "
+                    "Agent[id={}, name={}, route={}, stage={}, route_orientation={}, target={}, "
+                    "pos={}, "
                     "state={}]",
                     agent.id,
+                    agent.name,
                     agent.route_id,
                     agent.stage_id,
                     agent.route_orientation,

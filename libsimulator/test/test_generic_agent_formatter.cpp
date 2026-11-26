@@ -12,6 +12,7 @@
 #include "unique_id.hpp"
 
 #include <fmt/format.h>
+#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include <memory>
@@ -26,6 +27,13 @@ static GenericAgent make_agent(OperationalModelState model)
         jps::UniqueID<BaseStage>::invalid,
         *room.geometry->get_location_near_z(0.0, 0.0, 0.0),
         std::move(model));
+}
+
+TEST(GenericAgentFormatter, FormatsTheName)
+{
+    auto agent = make_agent(CollisionFreeSpeedModelState{});
+    agent.name = "anna";
+    EXPECT_THAT(fmt::format("{}", agent), testing::HasSubstr("name=anna"));
 }
 
 TEST(GenericAgentFormatter, FormatsGeneralizedCentrifugalForceModelAgent)

@@ -28,6 +28,7 @@ void init_agent(py::module_& m)
     // this wrapper freshly on every attribute access.
     py::class_<GenericAgent>(m, "_Agent")
         .def_property_readonly("id", [](const GenericAgent& agent) { return agent.id.get_id(); })
+        .def_property_readonly("name", [](const GenericAgent& agent) { return agent.name; })
         .def_property_readonly(
             "route_id",
             [](const GenericAgent& agent) -> std::optional<uint64_t> {

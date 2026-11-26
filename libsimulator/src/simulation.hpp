@@ -75,8 +75,7 @@ private:
     std::vector<TargetReachedRecord> _reached_targets;
     std::vector<RemovalRecord> _removals;
     std::unordered_map<Route::ID, std::unique_ptr<Route>> _routes;
-    /// Kept apart from the agents, which are copied every iteration; only named agents.
-    std::unordered_map<GenericAgent::ID, std::string> _agent_names;
+    /// Only named agents.
     std::unordered_map<std::string, GenericAgent::ID> _agent_ids_by_name;
     Timer _timer{};
     State _state{State::Ready};
@@ -95,9 +94,9 @@ private:
     void follow(GenericAgent& agent, Route::ID route_id, BaseStage& stage);
     void validate_new_agent(const GenericAgent& agent) const;
     /// Throws if another agent has @p name.
-    void check_agent_name(const std::optional<std::string>& name) const;
+    void check_agent_name(const std::string& name) const;
     /// Adds @p agent, with its orientation, and returns its id.
-    GenericAgent::ID emplace_agent(GenericAgent&& agent, std::optional<std::string> name);
+    GenericAgent::ID emplace_agent(GenericAgent&& agent);
 
 public:
     /// Shares ownership of the geometry, which is never modified: several simulations, or a
@@ -158,22 +157,21 @@ public:
     std::vector<GenericAgent::ID> agents_in_polygon(const Polygon& polygon, std::size_t region_id);
     /// Adds an agent at @p location that follows @p route_id, see reroute(). An agent added
     /// inside its first stage has reached it; it moves on in the next iteration.
-    /// @p name has to be unique among the agents, if given; it is free again once its agent has
-    /// left.
+    /// @p name has to be unique among the agents, unless empty, which means no name; it is free
+    /// again once its agent has left.
     GenericAgent::ID add_agent(
         const Location& location,
         Route::ID route_id,
         std::optional<BaseStage::ID> first_stage,
         OperationalModelState model,
-        std::optional<std::string> name = {});
+        std::string name = {});
     /// Adds an agent at @p location that is steered to @p steer_to.
     GenericAgent::ID add_agent(
         const Location& location,
         const Location& steer_to,
         OperationalModelState model,
-        std::optional<std::string> name = {});
-    std::optional<std::string> agent_name(GenericAgent::ID id) const;
-    /// The agent named @p name, if there is one.
+        std::string name = {});
+    /// The agent named @p name, if there is one; never one for the empty name.
     std::optional<GenericAgent::ID> agent_named(const std::string& name) const;
     /// See `Geometry::get_location`.
     Location get_location(double x, double y, std::size_t region_id) const;

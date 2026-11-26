@@ -197,7 +197,7 @@ void init_simulation(py::module_& m)
                uint64_t route_id,
                std::optional<uint64_t> first_target_id,
                OperationalModelState state,
-               std::optional<std::string> name) {
+               std::string name) {
                 return sim
                     .add_agent(
                         location,
@@ -220,7 +220,7 @@ void init_simulation(py::module_& m)
                const Location& location,
                const Location& steer_to,
                OperationalModelState state,
-               std::optional<std::string> name) {
+               std::string name) {
                 return sim.add_agent(location, steer_to, std::move(state), std::move(name))
                     .get_id();
             },
@@ -229,10 +229,6 @@ void init_simulation(py::module_& m)
             py::arg("steer_to"),
             py::arg("state"),
             py::arg("name"))
-        .def(
-            "agent_name",
-            [](const Simulation& sim, uint64_t agent_id) { return sim.agent_name(agent_id); },
-            py::arg("agent_id"))
         .def(
             "agent_named",
             [](const Simulation& sim, const std::string& name) -> std::optional<uint64_t> {
