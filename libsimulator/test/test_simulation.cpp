@@ -731,6 +731,53 @@ TEST(AddAgent, IsAllowedAgainAfterAnAgentWasRejected)
     EXPECT_NO_THROW(world.sim.iterate());
 }
 
+/// A simulation whose model rejects agents on demand, with a route that sends agents to two
+/// waypoints in turn.
+struct TakingTurns : HookedRoom {
+    BaseStage::ID wp1 = route_to(sim, Point{16, 4}, room_id).second;
+    BaseStage::ID wp2 = route_to(sim, Point{16, 16}, room_id).second;
+    Route::ID in_turn = sim.add_route(
+        {{std::nullopt,
+          RoundRobinTransitionDescription{{{wp1, std::uint64_t{1}}, {wp2, std::uint64_t{1}}}}}});
+
+    /// The stage an agent added at @p position goes to first.
+    BaseStage::ID first_stage_of_an_agent(Point position, std::optional<BaseStage::ID> given = {})
+    {
+        const auto id = sim.add_agent(at(sim, position, room_id), in_turn, given, State{});
+        return sim.agent(id).stage_id;
+    }
+
+    void reject_agents(bool reject)
+    {
+        hooks->on_seed =
+            reject ? [] { throw SimulationError("rejected"); } : std::function<void()>{};
+    }
+};
+
+TEST(AddAgent, ARejectedAgentTakesNoTurnInTheFirstTransition)
+{
+    TakingTurns world;
+    world.reject_agents(true);
+    EXPECT_THROW(world.first_stage_of_an_agent({2, 2}), SimulationError);
+    world.reject_agents(false);
+
+    EXPECT_EQ(world.first_stage_of_an_agent({2, 2}), world.wp1);
+    EXPECT_EQ(world.first_stage_of_an_agent({4, 2}), world.wp2);
+    EXPECT_EQ(world.first_stage_of_an_agent({6, 2}), world.wp1);
+}
+
+TEST(AddAgent, ARejectedAgentWithAGivenFirstStageLeavesNothingBehindEither)
+{
+    TakingTurns world;
+    EXPECT_EQ(world.first_stage_of_an_agent({2, 2}), world.wp1);
+    world.reject_agents(true);
+    EXPECT_THROW(world.first_stage_of_an_agent({4, 2}, world.wp1), SimulationError);
+    world.reject_agents(false);
+
+    EXPECT_EQ(world.first_stage_of_an_agent({4, 2}), world.wp2);
+    EXPECT_EQ(world.sim.stage(world.wp1)->count_targeting(), 1u);
+}
+
 TEST(AgentRngSeeding, AgentsAddedFromTheSameStateGetTheirOwnStreams)
 {
     SeededRoom world;

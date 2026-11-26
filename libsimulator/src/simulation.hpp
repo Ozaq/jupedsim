@@ -103,6 +103,11 @@ class Simulation
     /// Lets @p agent follow @p route_id from @p stage on.
     void follow(GenericAgent& agent, Route::ID route_id, BaseStage& stage);
     void validate_new_agent(const GenericAgent& agent) const;
+    /// Lets the model seed the state of the new agent @p agent, which a custom model may fail
+    /// to do. The last thing that can reject an agent, so it comes before whatever leaves a
+    /// trace, see follow(); and only once the agent is validated, so that a rejected one takes
+    /// no stream from the model's sequence.
+    void seed(GenericAgent& agent);
     /// Throws if another agent has @p name.
     void check_agent_name(const std::string& name) const;
     /// Adds @p agent, with its orientation, and returns its id.

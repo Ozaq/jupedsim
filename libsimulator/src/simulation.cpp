@@ -263,7 +263,9 @@ GenericAgent::ID Simulation::add_agent(
         std::move(model),
         std::move(name)};
     validate_new_agent(agent);
-    // Only now, so that a rejected agent takes no turn in the route's first transition.
+    seed(agent);
+    // Only now, so that a rejected agent takes no turn in the route's first transition: nothing
+    // from here on can reject it.
     follow(agent, route_id, stage != nullptr ? *stage : *route.first_stage());
     return emplace_agent(std::move(agent));
 }
@@ -288,6 +290,7 @@ GenericAgent::ID Simulation::add_agent(
         std::move(name)};
     agent.current_target = steer_to;
     validate_new_agent(agent);
+    seed(agent);
     return emplace_agent(std::move(agent));
 }
 
@@ -318,10 +321,13 @@ std::optional<GenericAgent::ID> Simulation::agent_named(const std::string& name)
     return iter == std::end(_agent_ids_by_name) ? std::nullopt : std::optional{iter->second};
 }
 
+void Simulation::seed(GenericAgent& agent)
+{
+    _operational_decision_system.seed_agent_state(agent.state);
+}
+
 GenericAgent::ID Simulation::emplace_agent(GenericAgent&& agent)
 {
-    // Only once validated, so that a rejected agent takes no stream from the sequence.
-    _operational_decision_system.seed_agent_state(agent.state);
     if(!agent.name.empty()) {
         _agent_ids_by_name.emplace(agent.name, agent.id);
     }
