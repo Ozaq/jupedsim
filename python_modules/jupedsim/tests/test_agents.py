@@ -84,12 +84,15 @@ def test_the_empty_name_names_no_agent():
         r.sim.agent("")
 
 
-def test_none_names_no_agent_either():
+@pytest.mark.parametrize("name, got", [(None, "NoneType"), (7, "int")])
+def test_the_name_of_an_agent_has_to_be_a_string(name, got):
     r = _Room()
-    routed = r.sim.add_agent(r.at(5, 5), route=r.route, name=None)
-    steered = r.sim.add_agent(r.at(5, 7), steer_to=r.at(5, 8), name=None)
-    assert (routed.name, steered.name) == ("", "")
-    assert repr(routed) == f"Agent(id={routed.id})"
+    for where in ({"route": r.route}, {"steer_to": r.at(5, 8)}):
+        with pytest.raises(
+            TypeError, match=f'^name must be a str, "" for no name, got {got}$'
+        ):
+            r.sim.add_agent(r.at(5, 5), name=name, **where)
+    assert r.sim.agent_count() == 0
 
 
 def test_a_foreign_unnamed_agent_is_named_by_its_id_alone():

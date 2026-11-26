@@ -252,7 +252,7 @@ class Simulation:
             | WarpDriverModelState
             | Any
         ) = None,
-        name: str | None = "",
+        name: str = "",
     ) -> Agent:
         """Add an agent to the simulation.
 
@@ -277,15 +277,16 @@ class Simulation:
                 whatever type your :class:`~jupedsim.CustomOperationalModel` expects;
                 required. When adding agents with invalid parameters, or too close to
                 the boundary or other agents, this will cause an error.
-            name: Unique among the agents of this simulation, unless empty or
-                ``None``, which both mean no name; free again once its agent has
-                left. Used in :meth:`agent`.
+            name: Unique among the agents of this simulation, unless empty, which
+                means no name; free again once its agent has left. Used in
+                :meth:`agent`.
 
         Returns:
             Handle to the new agent.
 
         Raises:
-            TypeError: if ``location`` is not a :class:`~jupedsim.Location`.
+            TypeError: if ``location`` is not a :class:`~jupedsim.Location`, or
+                ``name`` is not a ``str``, e.g. ``None``.
             ValueError: if neither or both of ``route`` and ``steer_to`` are given,
                 or a handle belongs to another simulation.
             SimulationError: if ``first_target`` is not part of the route, a location
@@ -294,9 +295,13 @@ class Simulation:
                 narrower than two cells), or the name is already used.
         """
         location = self._checked_location(location, "location")
-        # Targets, routes and regions spell "no name" None; agents take it too.
-        if name is None:
-            name = ""
+        # The bindings reject anything else with a list of their overloads that
+        # never mentions the name. None is the likely one: it means "no name"
+        # for targets, routes and regions.
+        if not isinstance(name, str):
+            raise TypeError(
+                f'name must be a str, "" for no name, got {type(name).__name__}'
+            )
         if state is None:
             if self._default_state is None:
                 raise ValueError(
