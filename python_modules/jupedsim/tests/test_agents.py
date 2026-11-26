@@ -93,6 +93,25 @@ def test_a_foreign_unnamed_agent_is_named_by_its_id_alone():
         r.sim.mark_agent_for_removal(foreign)
 
 
+def test_a_foreign_agent_that_left_is_named_by_its_id_alone():
+    r, other = _Room(), _Room()
+    foreign = other.sim.add_agent(
+        other.at(5, 5), route=other.route, name="anna"
+    )
+    with pytest.raises(
+        ValueError,
+        match=rf"^Agent {foreign.id} \(anna\) belongs to another simulation",
+    ):
+        r.sim.mark_agent_for_removal(foreign)
+
+    other.sim.mark_agent_for_removal(foreign)
+    other.sim.iterate()
+    with pytest.raises(
+        ValueError, match=rf"^Agent {foreign.id} belongs to another simulation"
+    ):
+        r.sim.mark_agent_for_removal(foreign)
+
+
 def test_records_cover_all_iterations_of_one_iterate_call():
     r = _Room()
     for x, y in ((3.1, 4.5), (3.3, 5.5)):

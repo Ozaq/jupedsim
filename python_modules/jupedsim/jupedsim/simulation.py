@@ -746,9 +746,13 @@ class Simulation:
             )
         if handle._simulation is not self:
             word = "Target" if kind is RouteTarget else kind.__name__
-            raise ValueError(
-                f"{word} {id_and_name(handle)} belongs to another simulation"
-            )
+            try:
+                label = id_and_name(handle)
+            except SimulationError:
+                # The name of an agent that has left its simulation cannot be
+                # read any more; whose handle it is still has to be said.
+                label = str(handle.id)
+            raise ValueError(f"{word} {label} belongs to another simulation")
         return handle
 
     def _region_id(self, region: object) -> int:
