@@ -1272,6 +1272,87 @@ def test_add_agent_during_iterate_raises_simulation_error():
     simulation.iterate()
 
     assert isinstance(model.error, jps.SimulationError)
-    assert "add_agent is not allowed in state Iterating" in str(model.error)
+    assert "add_agent is not allowed while iterate is running" in str(
+        model.error
+    )
     # The re-entrant call must not have added an agent.
     assert simulation.agent_count() == 1
+
+
+class _ReenteringModel(jps.CustomOperationalModel):
+    """Calls back into the simulation from one of the hooks add_agent runs."""
+
+    def __init__(self, hook):
+        self.hook = hook
+        self.call = None
+        self.error = None
+
+    def compute_next_state(self, state, step):
+        return dataclasses.replace(state), (0.0, 0.0)
+
+    def _reenter(self, hook):
+        # An accepted add_agent runs the hooks again.
+        if hook != self.hook or self.call is None:
+            return
+        call, self.call = self.call, None
+        try:
+            call()
+        except Exception as e:
+            self.error = e
+
+    def check_model_constraint(self, state, view):
+        self._reenter("check_model_constraint")
+
+    def seed_agent_state(self, state):
+        self._reenter("seed_agent_state")
+        return state
+
+
+@pytest.mark.parametrize("hook", ["check_model_constraint", "seed_agent_state"])
+@pytest.mark.parametrize(
+    "operation",
+    ["add_agent", "mark_agent_for_removal", "add_target", "iterate", "close"],
+)
+def test_the_simulation_cannot_be_changed_while_an_agent_is_added(
+    hook, operation
+):
+    model = _ReenteringModel(hook)
+    surface = jps.GeometryBuilder()
+    room = surface.add_region(
+        boundary=[(0, 0), (10, 0), (10, 10), (0, 10)], height=0.0
+    )
+    sim = jps.Simulation(model=model, geometry=surface.build())
+    exit_area = [([(9, 4), (10, 4), (10, 6), (9, 6)], room)]
+    route = sim.add_route(
+        [
+            jps.FixedTransition(
+                jps.AGENT_LOCATION, sim.add_target(jps.Exit(exit_area))
+            )
+        ]
+    )
+
+    def add(x, name):
+        return sim.add_agent(
+            room.at(x, 5), route=route, state=_MinimalCustomState(), name=name
+        )
+
+    first = add(2, "first")
+    model.call = {
+        "add_agent": lambda: add(6, "anna"),
+        "mark_agent_for_removal": lambda: sim.mark_agent_for_removal(first),
+        "add_target": lambda: sim.add_target(jps.Exit(exit_area)),
+        "iterate": sim.iterate,
+        "close": sim.close,
+    }[operation]
+
+    anna = add(4, "anna")
+
+    assert isinstance(model.error, jps.SimulationError)
+    assert f"{operation} is not allowed while add_agent is running" in str(
+        model.error
+    )
+    assert [agent.name for agent in sim.agents()] == ["first", "anna"]
+    assert sim.agent("anna") == anna
+    assert not first.leaving
+    assert len(sim.targets()) == 1
+    assert sim.iteration_count() == 0

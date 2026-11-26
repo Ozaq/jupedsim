@@ -82,11 +82,25 @@ bool sorted_by_id(const Agents& agents)
 }
 } // namespace
 
-void Simulation::throw_if_state(State forbidden, const char* operation) const
+void Simulation::check_open(const char* operation) const
 {
-    if((_state & forbidden) != State{}) {
-        throw SimulationError("{} is not allowed in state {}", operation, _state);
+    if(_closed) {
+        throw SimulationError("{} is not allowed in state Closed", operation);
     }
+}
+
+void Simulation::check_not_running(const char* operation) const
+{
+    if(_running != nullptr) {
+        throw SimulationError("{} is not allowed while {} is running", operation, _running);
+    }
+}
+
+Simulation::ReentrancyGuard Simulation::enter(const char* operation)
+{
+    check_open(operation);
+    check_not_running(operation);
+    return ReentrancyGuard{_running, operation};
 }
 
 Simulation::Simulation(
@@ -103,13 +117,13 @@ Simulation::Simulation(
 
 const SimulationClock& Simulation::clock() const
 {
-    throw_if_state(State::Closed, "clock");
+    check_open("clock");
     return _clock;
 }
 
 void Simulation::set_tracing(bool status)
 {
-    throw_if_state(State::Closed, "set_tracing");
+    check_open("set_tracing");
     if(status) {
         Profiler::instance().enable();
     } else {
@@ -119,8 +133,7 @@ void Simulation::set_tracing(bool status)
 
 void Simulation::iterate()
 {
-    throw_if_state(State::Iterating | State::Closed, "iterate");
-    IterationScope iteration_scope(_state);
+    const auto guard = enter("iterate");
     JPS_SCOPED_TIMER_AND_TRACE(_timer, "Total Iteration", General);
 
     _reached_targets.clear();
@@ -175,15 +188,17 @@ void Simulation::iterate()
 
 void Simulation::close()
 {
-    throw_if_state(State::Iterating, "close");
-    _state = State::Closed;
+    // Closing twice is fine, closing from within an operation is not.
+    check_not_running("close");
+    const ReentrancyGuard guard{_running, "close"};
+    _closed = true;
     _routing_engine.reset();
 }
 
 BaseStage::ID
 Simulation::add_stage(const StageDescription& stage_description, std::optional<std::string> name)
 {
-    throw_if_state(State::Iterating | State::Closed, "add_target");
+    const auto guard = enter("add_target");
     JPS_SCOPED_TIMER_AND_TRACE(_timer, "Add Target", Detailed);
     if(name) {
         for(const auto& [_, stage] : _stage_manager.stages()) {
@@ -212,7 +227,7 @@ Route::ID Simulation::add_route(
     const std::vector<RouteTransitionDescription>& transitions,
     std::optional<std::string> name)
 {
-    throw_if_state(State::Iterating | State::Closed, "add_route");
+    const auto guard = enter("add_route");
     JPS_SCOPED_TIMER_AND_TRACE(_timer, "Add Route", Detailed);
     if(name) {
         for(const auto& [_, route] : _routes) {
@@ -234,7 +249,7 @@ GenericAgent::ID Simulation::add_agent(
     OperationalModelState model,
     std::string name)
 {
-    throw_if_state(State::Iterating | State::Closed, "add_agent");
+    const auto guard = enter("add_agent");
     JPS_SCOPED_TIMER_AND_TRACE(_timer, "Add Agent", Detailed);
     check_routable(location, "location");
     check_agent_name(name);
@@ -259,7 +274,7 @@ GenericAgent::ID Simulation::add_agent(
     OperationalModelState model,
     std::string name)
 {
-    throw_if_state(State::Iterating | State::Closed, "add_agent");
+    const auto guard = enter("add_agent");
     JPS_SCOPED_TIMER_AND_TRACE(_timer, "Add Agent", Detailed);
     check_routable(location, "location");
     check_routable(steer_to, "steer_to");
@@ -298,7 +313,7 @@ void Simulation::check_agent_name(const std::string& name) const
 
 std::optional<GenericAgent::ID> Simulation::agent_named(const std::string& name) const
 {
-    throw_if_state(State::Closed, "agent_named");
+    check_open("agent_named");
     const auto iter = _agent_ids_by_name.find(name);
     return iter == std::end(_agent_ids_by_name) ? std::nullopt : std::optional{iter->second};
 }
@@ -322,7 +337,7 @@ GenericAgent::ID Simulation::emplace_agent(GenericAgent&& agent)
 
 Location Simulation::get_location(double x, double y, std::size_t region_id) const
 {
-    throw_if_state(State::Closed, "get_location");
+    check_open("get_location");
     return _geometry->get_location(x, y, region_id);
 }
 
@@ -331,7 +346,7 @@ void Simulation::reroute(
     Route::ID route_id,
     std::optional<BaseStage::ID> first_stage)
 {
-    throw_if_state(State::Iterating | State::Closed, "reroute");
+    const auto guard = enter("reroute");
     auto& agent = reroutable(agent_id);
     auto& route = this->route(route_id);
     follow(agent, route_id, first_stage ? *stage_in(route, *first_stage) : *route.first_stage());
@@ -339,7 +354,7 @@ void Simulation::reroute(
 
 void Simulation::reroute(GenericAgent::ID agent_id, BaseStage::ID first_stage)
 {
-    throw_if_state(State::Iterating | State::Closed, "reroute");
+    const auto guard = enter("reroute");
     auto& agent = reroutable(agent_id);
     if(agent.route_id == Route::ID::invalid) {
         throw SimulationError("The agent has no route; pass route=.");
@@ -349,7 +364,7 @@ void Simulation::reroute(GenericAgent::ID agent_id, BaseStage::ID first_stage)
 
 void Simulation::reroute(GenericAgent::ID agent_id, const Location& steer_to)
 {
-    throw_if_state(State::Iterating | State::Closed, "reroute");
+    const auto guard = enter("reroute");
     check_routable(steer_to, "steer_to");
     auto& agent = reroutable(agent_id);
     if(agent.stage_id != BaseStage::ID::invalid) {
@@ -411,7 +426,7 @@ Route& Simulation::route(Route::ID route_id)
 
 const Route& Simulation::route(Route::ID route_id) const
 {
-    throw_if_state(State::Closed, "route");
+    check_open("route");
     const auto iter = _routes.find(route_id);
     if(iter == std::end(_routes)) {
         throw SimulationError("Unknown route id {}.", route_id);
@@ -421,7 +436,7 @@ const Route& Simulation::route(Route::ID route_id) const
 
 std::vector<Route::ID> Simulation::route_ids() const
 {
-    throw_if_state(State::Closed, "route_ids");
+    check_open("route_ids");
     std::vector<Route::ID> ids{};
     ids.reserve(_routes.size());
     for(const auto& [id, _] : _routes) {
@@ -443,7 +458,7 @@ BaseStage* Simulation::stage_in(const Route& route, BaseStage::ID stage_id) cons
 
 void Simulation::mark_agent_for_removal(GenericAgent::ID id)
 {
-    throw_if_state(State::Iterating | State::Closed, "mark_agent_for_removal");
+    const auto guard = enter("mark_agent_for_removal");
     JPS_TRACE_FUNC;
     const auto agent = find_agent(_agents, id);
     if(agent == std::end(_agents)) {
@@ -457,13 +472,13 @@ void Simulation::mark_agent_for_removal(GenericAgent::ID id)
 
 const std::vector<TargetReachedRecord>& Simulation::reached_targets() const
 {
-    throw_if_state(State::Closed, "reached_targets");
+    check_open("reached_targets");
     return _reached_targets;
 }
 
 const GenericAgent& Simulation::agent(GenericAgent::ID id) const
 {
-    throw_if_state(State::Closed, "agent");
+    check_open("agent");
     JPS_TRACE_FUNC;
     const auto iter = find_agent(_agents, id);
     if(iter == _agents.end()) {
@@ -474,7 +489,7 @@ const GenericAgent& Simulation::agent(GenericAgent::ID id) const
 
 GenericAgent& Simulation::agent(GenericAgent::ID id)
 {
-    throw_if_state(State::Closed, "agent");
+    check_open("agent");
     JPS_TRACE_FUNC;
     const auto iter = find_agent(_agents, id);
     if(iter == _agents.end()) {
@@ -485,43 +500,43 @@ GenericAgent& Simulation::agent(GenericAgent::ID id)
 
 const std::vector<RemovalRecord>& Simulation::removed_agents() const
 {
-    throw_if_state(State::Closed, "removed_agents");
+    check_open("removed_agents");
     return _removals;
 }
 
 double Simulation::elapsed_time() const
 {
-    throw_if_state(State::Closed, "elapsed_time");
+    check_open("elapsed_time");
     return _clock.elapsed_time();
 }
 
 double Simulation::dt() const
 {
-    throw_if_state(State::Closed, "dt");
+    check_open("dt");
     return _clock.dt();
 }
 
 uint64_t Simulation::iteration() const
 {
-    throw_if_state(State::Closed, "iteration");
+    check_open("iteration");
     return _clock.iteration();
 }
 
 size_t Simulation::agent_count() const
 {
-    throw_if_state(State::Closed, "agent_count");
+    check_open("agent_count");
     return _agents.size();
 }
 
 AgentContainer<GenericAgent>& Simulation::agents()
 {
-    throw_if_state(State::Closed, "agents");
+    check_open("agents");
     return _agents;
 };
 
 std::vector<GenericAgent::ID> Simulation::agents_in_range(const Location& from, double distance)
 {
-    throw_if_state(State::Closed, "agents_in_range");
+    check_open("agents_in_range");
     JPS_SCOPED_TIMER_AND_TRACE(_timer, "Agents in Range", Debug);
     check_routable(from, "location");
     std::vector<GenericAgent::ID> neighbor_ids{};
@@ -537,7 +552,7 @@ std::vector<GenericAgent::ID> Simulation::agents_in_range(const Location& from, 
 std::vector<GenericAgent::ID>
 Simulation::agents_in_polygon(const Polygon& polygon, std::size_t region_id)
 {
-    throw_if_state(State::Closed, "agents_in_polygon");
+    check_open("agents_in_polygon");
     JPS_SCOPED_TIMER_AND_TRACE(_timer, "Agents in Polygon", Debug);
     std::vector<GenericAgent::ID> result{};
     for(const auto& piece : _geometry->clip_to_region(polygon, region_id)) {
@@ -555,18 +570,18 @@ Simulation::agents_in_polygon(const Polygon& polygon, std::size_t region_id)
 
 OperationalModelType Simulation::model_type() const
 {
-    throw_if_state(State::Closed, "model_type");
+    check_open("model_type");
     return _operational_decision_system.model_type();
 }
 
 const BaseStage* Simulation::stage(BaseStage::ID stage_id) const
 {
-    throw_if_state(State::Closed, "target");
+    check_open("target");
     return _stage_manager.stage(stage_id);
 }
 std::vector<BaseStage::ID> Simulation::stage_ids() const
 {
-    throw_if_state(State::Closed, "targets");
+    check_open("targets");
     std::vector<BaseStage::ID> ids{};
     ids.reserve(_stage_manager.stages().size());
     for(const auto& [id, stage] : _stage_manager.stages()) {
@@ -578,7 +593,7 @@ std::vector<BaseStage::ID> Simulation::stage_ids() const
 
 std::map<std::size_t, TravelTimeGrid> Simulation::travel_times(BaseStage::ID stage_id)
 {
-    throw_if_state(State::Iterating | State::Closed, "travel_times");
+    const auto guard = enter("travel_times");
     const auto& destination = _stage_manager.stage(stage_id)->destination();
     std::map<std::size_t, TravelTimeGrid> grids{};
     for(std::size_t region_id = 0; region_id < _geometry->region_count(); ++region_id) {
@@ -589,14 +604,14 @@ std::map<std::size_t, TravelTimeGrid> Simulation::travel_times(BaseStage::ID sta
 
 double Simulation::travel_time(BaseStage::ID stage_id, const Location& from)
 {
-    throw_if_state(State::Iterating | State::Closed, "travel_time");
+    const auto guard = enter("travel_time");
     check_routable(from, "location");
     return _stage_manager.stage(stage_id)->destination().travel_time(from);
 }
 
 std::map<std::size_t, SpeedGrid> Simulation::default_speed_fields() const
 {
-    throw_if_state(State::Closed, "default_speed_fields");
+    check_open("default_speed_fields");
     std::map<std::size_t, SpeedGrid> grids{};
     for(std::size_t region_id = 0; region_id < _geometry->region_count(); ++region_id) {
         grids.emplace(region_id, _routing_engine->default_speed(region_id));
@@ -606,20 +621,20 @@ std::map<std::size_t, SpeedGrid> Simulation::default_speed_fields() const
 
 GridInfo Simulation::grid_info(std::size_t region_id) const
 {
-    throw_if_state(State::Closed, "grid_info");
+    check_open("grid_info");
     return _routing_engine->grid_info(region_id);
 }
 
 void Simulation::set_default_speed_field(std::size_t region_id, const std::vector<double>& values)
 {
-    throw_if_state(State::Iterating | State::Closed, "set_default_speed_field");
+    const auto guard = enter("set_default_speed_field");
     _routing_engine->set_default_speed(region_id, values);
 }
 
 std::map<std::size_t, std::optional<SpeedGrid>>
 Simulation::custom_speed_fields(BaseStage::ID stage_id) const
 {
-    throw_if_state(State::Closed, "custom_speed_fields");
+    check_open("custom_speed_fields");
     const auto& destination = _stage_manager.stage(stage_id)->destination();
     std::map<std::size_t, std::optional<SpeedGrid>> grids{};
     for(std::size_t region_id = 0; region_id < _geometry->region_count(); ++region_id) {
@@ -638,25 +653,25 @@ void Simulation::set_custom_speed_field(
     std::size_t region_id,
     const std::vector<double>& values)
 {
-    throw_if_state(State::Iterating | State::Closed, "set_custom_speed_field");
+    const auto guard = enter("set_custom_speed_field");
     _stage_manager.stage(stage_id)->destination().set_speed_override(region_id, values);
 }
 
 bool Simulation::has_custom_speed_field(BaseStage::ID stage_id, std::size_t region_id) const
 {
-    throw_if_state(State::Closed, "has_custom_speed_field");
+    check_open("has_custom_speed_field");
     return _stage_manager.stage(stage_id)->destination().has_speed_override(region_id);
 }
 
 void Simulation::clear_custom_speed_field(BaseStage::ID stage_id, std::size_t region_id)
 {
-    throw_if_state(State::Iterating | State::Closed, "clear_custom_speed_field");
+    const auto guard = enter("clear_custom_speed_field");
     _stage_manager.stage(stage_id)->destination().clear_speed_override(region_id);
 }
 
 const std::shared_ptr<const Geometry>& Simulation::geo() const
 {
-    throw_if_state(State::Closed, "geo");
+    check_open("geo");
     return _geometry;
 }
 

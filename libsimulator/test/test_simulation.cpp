@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
+#include "agent_view.hpp"
 #include "floorfield_routing_engine.hpp"
 #include "generic_agent.hpp"
 #include "geometry/geometry.hpp"
@@ -6,6 +7,7 @@
 #include "geometry_fixtures.hpp"
 #include "kernel.hpp"
 #include "mesh_fixtures.hpp"
+#include "operational_model_state.hpp"
 #include "operational_models/agent_rng.hpp"
 #include "operational_models/anticipation_velocity_model/anticipation_velocity_model.hpp"
 #include "operational_models/collision_free_speed_model/collision_free_speed_model.hpp"
@@ -24,9 +26,11 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <functional>
 #include <iterator>
 #include <memory>
 #include <optional>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -93,6 +97,91 @@ test_geometries::SingleRoom room_with_a_slit()
 const Point in_the_slit{6.9, 2.5};
 /// Radius of an agent that fits into the slit.
 constexpr double thin = 0.01;
+
+/// A CollisionFreeSpeedModel whose hooks first run what a test hands them, e.g. a call back into
+/// the simulation.
+class HookedModel : public CollisionFreeSpeedModel
+{
+public:
+    std::function<void()> on_check{};
+    std::function<void()> on_seed{};
+
+    HookedModel() : CollisionFreeSpeedModel(8.0, 0.1, 5.0, 0.02) {}
+
+    void check_model_constraint(const GenericAgent& agent, const AgentView& view) const override
+    {
+        if(on_check) {
+            on_check();
+        }
+        CollisionFreeSpeedModel::check_model_constraint(agent, view);
+    }
+
+    void seed_agent_state(OperationalModelState& state) override
+    {
+        if(on_seed) {
+            on_seed();
+        }
+        CollisionFreeSpeedModel::seed_agent_state(state);
+    }
+};
+
+/// A simulation on a flat 20 x 20 room whose model runs the hooks of a test.
+struct HookedRoom {
+    HookedModel* hooks;
+    test_geometries::SingleRoom room = test_geometries::rectangle({0, 0}, {20, 20});
+    std::size_t room_id = room.room_id;
+    Simulation sim;
+    Route::ID route = route_to(sim, Point{18, 18}, room_id).first;
+
+    HookedRoom() : HookedRoom(std::make_unique<HookedModel>()) {}
+
+    GenericAgent::ID add(Point position, std::string name = {})
+    {
+        return sim.add_agent(at(sim, position, room_id), route, {}, State{}, std::move(name));
+    }
+
+private:
+    explicit HookedRoom(std::unique_ptr<HookedModel> model)
+        : hooks(model.get())
+        , sim(std::move(model), std::move(room.geometry), 0.01, FloorfieldOptions{})
+    {
+    }
+};
+
+/// Expects that add_agent, called again from the hook @p hook of the model while an agent is
+/// being added, is rejected and leaves the agent being added as it is.
+void expect_add_agent_is_rejected_from(std::function<void()> HookedModel::* hook)
+{
+    using testing::HasSubstr;
+    using testing::ThrowsMessage;
+    HookedRoom world;
+    bool reentered = false;
+    world.hooks->*hook = [&] {
+        // An accepted call runs the hooks again.
+        if(std::exchange(reentered, true)) {
+            return;
+        }
+        EXPECT_THAT(
+            [&] { world.add({5, 5}, "anna"); },
+            ThrowsMessage<SimulationError>(
+                HasSubstr("add_agent is not allowed while add_agent is running")));
+        EXPECT_THAT(
+            [&] { world.sim.iterate(); },
+            ThrowsMessage<SimulationError>(
+                HasSubstr("iterate is not allowed while add_agent is running")));
+        EXPECT_THAT(
+            [&] { world.sim.close(); },
+            ThrowsMessage<SimulationError>(
+                HasSubstr("close is not allowed while add_agent is running")));
+    };
+
+    const auto id = world.add({2, 2}, "anna");
+
+    EXPECT_TRUE(reentered);
+    EXPECT_EQ(world.sim.agent_count(), 1u);
+    EXPECT_EQ(world.sim.agent_named("anna"), id);
+    EXPECT_EQ(world.sim.agent(id).location.xy(), Point(2, 2));
+}
 
 /// A simulation whose model gives every agent a random number stream, ready to take agents.
 struct SeededRoom {
@@ -556,6 +645,7 @@ TEST(SimulationClose, RejectsFurtherUse)
     EXPECT_THAT([&] { sim.grid_info(flat.room_id); }, closed);
     EXPECT_THAT([&] { sim.get_location(5, 5, flat.room_id); }, closed);
     EXPECT_THAT([&] { sim.geo(); }, closed);
+    EXPECT_NO_THROW(sim.close()) << "closing again changes nothing";
 }
 
 TEST(AddAgent, AnAgentThatCannotBeRoutedIsNotAdded)
@@ -619,6 +709,26 @@ TEST(Simulation, ALocationOnASeamCanBeRouted)
 
     EXPECT_NO_THROW(sim.add_agent(on_the_seam, route, {}, State{}));
     EXPECT_NO_THROW(sim.iterate());
+}
+
+TEST(AddAgent, IsRejectedFromTheModelsConstraintCheck)
+{
+    expect_add_agent_is_rejected_from(&HookedModel::on_check);
+}
+
+TEST(AddAgent, IsRejectedFromTheModelsSeeding)
+{
+    expect_add_agent_is_rejected_from(&HookedModel::on_seed);
+}
+
+TEST(AddAgent, IsAllowedAgainAfterAnAgentWasRejected)
+{
+    HookedRoom world;
+    world.hooks->on_check = [] { throw SimulationError("rejected"); };
+    EXPECT_THROW(world.add({2, 2}), SimulationError);
+    world.hooks->on_check = {};
+    EXPECT_NO_THROW(world.add({2, 2}));
+    EXPECT_NO_THROW(world.sim.iterate());
 }
 
 TEST(AgentRngSeeding, AgentsAddedFromTheSameStateGetTheirOwnStreams)

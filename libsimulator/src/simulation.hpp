@@ -24,8 +24,6 @@
 #include "tactical_decision_system.hpp"
 #include "timing.hpp"
 
-#include <fmt/format.h>
-
 #include <cstddef>
 #include <cstdint>
 #include <map>
@@ -34,29 +32,25 @@
 #include <string>
 #include <string_view>
 #include <unordered_map>
-#include <utility>
 #include <vector>
 
 class Simulation
 {
-public:
-    /// Ready allows all operations. Mutating entry points must not run while the iteration
-    /// pipeline works on the agent containers (Iterating). Closed blocks all entry points.
-    /// The simulation is in exactly one state; combine states with `|` to form a mask.
-    enum class State : uint8_t { Ready = 1 << 0, Iterating = 1 << 1, Closed = 1 << 2 };
-
-private:
-    /// RAII setter for `_state`: Iterating on construction, Ready on scope exit (including
-    /// exception unwinding out of the iteration pipeline).
-    class IterationScope
+    /// Marks an entry point that must not be re-entered as running, for as long as it lives:
+    /// its name is in `_running` from construction to scope exit, which includes an exception
+    /// unwinding out of the iteration pipeline or out of a callback of the model.
+    class ReentrancyGuard
     {
-        State& _state;
+        const char*& _running;
 
     public:
-        explicit IterationScope(State& state) : _state(state) { _state = State::Iterating; }
-        ~IterationScope() { _state = State::Ready; }
-        IterationScope(const IterationScope&) = delete;
-        IterationScope& operator=(const IterationScope&) = delete;
+        ReentrancyGuard(const char*& running, const char* operation) : _running(running)
+        {
+            _running = operation;
+        }
+        ~ReentrancyGuard() { _running = nullptr; }
+        ReentrancyGuard(const ReentrancyGuard&) = delete;
+        ReentrancyGuard& operator=(const ReentrancyGuard&) = delete;
     };
 
     SimulationClock _clock;
@@ -78,11 +72,25 @@ private:
     /// Only named agents.
     std::unordered_map<std::string, GenericAgent::ID> _agent_ids_by_name;
     Timer _timer{};
-    State _state{State::Ready};
+    /// The entry point that is running and must not be re-entered, by the name its callers
+    /// know it under; nullptr if none is. Entry points that change the simulation must not run
+    /// while one of them does: they work on the agent containers, and some of them run
+    /// callbacks of the model, which may call back into the simulation. Entry points that only
+    /// read may run at any time.
+    const char* _running{nullptr};
+    /// A closed simulation rejects every entry point but close() and the timer's.
+    bool _closed{false};
     enum LogLevel { General = 1, Detailed = 2, Debug = 3 };
 
-    /// Throws SimulationError if the current state is in the mask @p forbidden.
-    void throw_if_state(State forbidden, const char* operation) const;
+    /// Throws if the simulation is closed. Every entry point that only reads starts with this.
+    void check_open(const char* operation) const;
+    /// Throws if an entry point that must not be re-entered is running.
+    void check_not_running(const char* operation) const;
+    /// Throws if the simulation is closed, or if an entry point that must not be re-entered is
+    /// running; else @p operation is that entry point until the guard returned goes out of
+    /// scope. Every entry point that changes the simulation starts with this, whether or not it
+    /// runs callbacks itself.
+    [[nodiscard]] ReentrancyGuard enter(const char* operation);
     /// Throws unless @p location lies on this simulation's geometry, where the floor field can
     /// route from it. The precondition of every entry point that takes a location: no routing
     /// query fails later for where it is asked.
@@ -223,35 +231,4 @@ public:
     void set_timer_log_level(int level) { _timer.set_log_level(level); };
     TimerEntry::DurationType get_timer_duration(const std::string_view name) const;
     std::map<std::string, TimerEntry::DurationType> get_timer_durations() const;
-};
-
-constexpr Simulation::State operator|(Simulation::State lhs, Simulation::State rhs)
-{
-    return static_cast<Simulation::State>(static_cast<uint8_t>(lhs) | static_cast<uint8_t>(rhs));
-}
-
-constexpr Simulation::State operator&(Simulation::State lhs, Simulation::State rhs)
-{
-    return static_cast<Simulation::State>(static_cast<uint8_t>(lhs) & static_cast<uint8_t>(rhs));
-}
-
-/// Prints a state by name, a mask as its names joined by `|`.
-template <>
-struct fmt::formatter<Simulation::State> : fmt::formatter<std::string_view> {
-    auto format(Simulation::State state, format_context& ctx) const
-    {
-        using enum Simulation::State;
-        auto out = ctx.out();
-        bool first = true;
-        for(const auto& [flag, name] :
-            {std::pair{Ready, "Ready"},
-             std::pair{Iterating, "Iterating"},
-             std::pair{Closed, "Closed"}}) {
-            if((state & flag) == flag) {
-                out = fmt::format_to(out, "{}{}", first ? "" : "|", name);
-                first = false;
-            }
-        }
-        return out;
-    }
 };
