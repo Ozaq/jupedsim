@@ -11,7 +11,6 @@
 #include "operational_model_state.hpp"
 #include "operational_model_type.hpp"
 
-#include <algorithm>
 #include <cstddef>
 #include <iterator>
 #include <memory>
@@ -42,8 +41,11 @@ public:
         AgentContainer<GenericAgent>& agents)
     {
         const EnvironmentQuery env_query{geometry, neighborhood_search};
-        _next.clear();
-        std::copy(std::begin(agents), std::end(agents), std::back_inserter(_next));
+        // Assigned into the generation before, kept from the last step: its elements are
+        // overwritten in place, so an agent's name and whatever else of it owns memory reuse
+        // what they hold, where clearing and copying anew would allocate for each agent in
+        // every step.
+        _next.assign(std::begin(agents), std::end(agents));
         for(size_t index = 0; index < agents.size(); ++index) {
             const auto& current = agents[index];
             auto& next = _next[index];
