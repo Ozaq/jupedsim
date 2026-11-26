@@ -23,7 +23,8 @@ use crate::fsm;
 use crate::geometry::{self, bounding_box, GridParams, GridSpec, MIN_SPEED};
 use crate::region_graph::{self, DirectedSeam};
 use crate::{AreaPiece, RegionGraph, Ring};
-use geo::{Contains, Point, Polygon};
+#[cfg(test)]
+use geo::{Point, Polygon};
 use std::cmp::Ordering;
 use std::collections::{BinaryHeap, HashMap, HashSet};
 use std::fmt;
@@ -95,8 +96,9 @@ struct RegionGrid {
     /// wall term until the user sets it. Positive on walkable cells, 0 on
     /// all others (what `fsm` reads as an obstacle).
     default_speed: Vec<f32>,
-    /// The region's walkable polygon, for exact point-in-region tests: the
-    /// grid only resolves it to whole cells.
+    /// The region's polygon. Stands in for the geometry in tests, which has
+    /// to tell which region a point is in, see `walk`.
+    #[cfg(test)]
     shape: Polygon<f64>,
 }
 
@@ -266,6 +268,7 @@ impl MultiRegionFloorfield {
                     offset,
                     walkable: default_speed.iter().map(|&v| v > 0.0).collect(),
                     default_speed,
+                    #[cfg(test)]
                     shape: geometry::polygon(&region.outer, &region.holes),
                 }
             })
@@ -311,21 +314,15 @@ impl MultiRegionFloorfield {
         Ok(&self.region(region)?.walkable)
     }
 
-    /// Whether an agent at (x, y) can be routed in `region`: the point lies
-    /// inside the region's polygon, and a walkable cell is near enough for
-    /// `direction` to take the gradient from it. The polygon test is exact,
-    /// so a point inside a hole or a wall is rejected even where the grid's
-    /// cells would reach it; a point inside the polygon but in a cell whose
-    /// centre is not (next to a slanted wall) is accepted.
-    pub fn is_routable(&self, region: usize, x: f64, y: f64) -> bool {
-        let Ok(g) = self.region(region) else {
-            return false;
-        };
-        if !(x.is_finite() && y.is_finite()) {
-            return false;
-        }
-        g.shape.contains(&Point::new(x, y))
-            && nearest_walkable(&self.spec, g, [x, y], None).is_some()
+    /// Whether `direction` and `travel_time` find a cell for (x, y) in
+    /// `region`: the point is covered by the region's grid, and a walkable
+    /// cell lies within two cells of it. They fail with `NotRoutable` where
+    /// this is false, and only there. The point is not tested against the
+    /// region's polygon: the caller knows that it lies in the region, its
+    /// boundary included.
+    pub fn can_route_from(&self, region: usize, x: f64, y: f64) -> bool {
+        self.covered(region, x, y)
+            .is_ok_and(|g| nearest_walkable(&self.spec, g, [x, y], None).is_some())
     }
 
     /// Number of cell pairs a seam was rasterised into (0: the seam is too
@@ -1226,6 +1223,40 @@ mod tests {
         points
     }
 
+    /// `can_route_from` is the precondition of `direction` and `travel_time`:
+    /// they fail with `NotRoutable` where it is false, and only there.
+    #[test]
+    fn can_route_from_tells_where_direction_and_travel_time_find_a_cell() {
+        // A 5 x 5 room with a slit in its right wall, 6 cm wide and 2 m deep:
+        // no cell fits into it.
+        let outer = ring(&[
+            0., 0., 5., 0., 5., 2.47, 7., 2.47, 7., 2.53, 5., 2.53, 5., 5., 0., 5.,
+        ]);
+        let mut ff = build(vec![region(outer)], vec![]).unwrap();
+        let dest = ff.add_point_destination(0, 1.0, 1.0).unwrap();
+        for (x, y, routable) in [
+            (2.5, 2.5, true),   // in the room
+            (5.0, 1.0, true),   // on its wall, the boundary of the polygon
+            (5.2, 2.5, true),   // in the slit, cells of the room within two cells
+            (6.9, 2.5, false),  // deep in the slit
+            (40.0, 2.5, false), // off the grid
+        ] {
+            assert_eq!(ff.can_route_from(0, x, y), routable, "({x}, {y})");
+            let not_routable = Err(MultiRegionError::NotRoutable { region: 0, x, y });
+            assert_eq!(
+                ff.direction(0, x, y, dest).map(|_| ()) != not_routable,
+                routable,
+                "direction at ({x}, {y})"
+            );
+            assert_eq!(
+                ff.travel_time(0, x, y, dest).map(|_| ()) != not_routable,
+                routable,
+                "travel time at ({x}, {y})"
+            );
+        }
+        assert!(!ff.can_route_from(1, 2.5, 2.5), "an unknown region");
+    }
+
     /// An agent inside the polygon but in a cell whose centre lies outside it
     /// (next to a slanted wall) stands on an obstacle cell, which has no
     /// gradient. It gets the direction at the nearest walkable cell, and its
@@ -1288,26 +1319,7 @@ mod tests {
             ff.regions[0].grid.cell_center(cell),
             "anchored at the snapped cell"
         );
-        assert!(ay > 0.0 && ff.is_routable(0, ax, ay));
-    }
-
-    /// `is_routable` decides by the polygon, not by whole cells: a point inside
-    /// the room next to a slanted wall is routable even though its cell centre
-    /// lies outside; a point just beyond that wall is not, even though
-    /// walkable cells are within reach.
-    #[test]
-    fn routability_follows_the_polygon_not_the_cells() {
-        let outer = ring(&[0., 0., 10., 0., 10.1, 5., 5., 5., 5., 10., 0., 10.]);
-        let ff = build(vec![region(outer)], vec![]).unwrap();
-        let g = &ff.regions[0];
-        let edge_cell = g.local(ff.spec.lattice_cell(10.02, 2.0)).unwrap();
-        assert!(!g.walkable(edge_cell), "precondition: an obstacle cell");
-        assert!(ff.is_routable(0, 10.02, 2.0), "inside the room");
-        assert!(!ff.is_routable(0, 10.2, 2.0), "beyond the wall");
-        assert!(
-            !ff.is_routable(0, 7.5, 7.5),
-            "in the missing quarter of the L"
-        );
+        assert!(ay > 0.0 && ff.regions[0].walkable(cell));
     }
 
     /// A piece covering no cell centre falls back to the cell of a point inside
@@ -1353,7 +1365,7 @@ mod tests {
         for (x, y) in non_finite {
             assert!(invalid(&ff.add_point_destination(0, x, y)), "({x}, {y})");
             assert!(invalid(&ff.direction(0, x, y, dest)), "({x}, {y})");
-            assert!(!ff.is_routable(0, x, y), "({x}, {y})");
+            assert!(!ff.can_route_from(0, x, y), "({x}, {y})");
         }
         // Finite, but so far beyond the grid that the lattice cell saturates
         // at the i64 limits.
@@ -1363,7 +1375,7 @@ mod tests {
                 "({x}, {y})"
             );
             assert!(not_routable(&ff.direction(0, x, y, dest)), "({x}, {y})");
-            assert!(!ff.is_routable(0, x, y), "({x}, {y})");
+            assert!(!ff.can_route_from(0, x, y), "({x}, {y})");
         }
         // Just outside the polygon, still inside the grid: a direction back in.
         let (dx, _) = ff.direction(0, 20.1, 2.0, dest).unwrap();

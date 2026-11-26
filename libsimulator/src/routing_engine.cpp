@@ -39,6 +39,11 @@ void RoutingEngine::set_default_speed(std::size_t region, const std::vector<doub
     _floorfield.set_default_speed(region, values);
 }
 
+bool RoutingEngine::can_route_from(const Location& where) const
+{
+    return _floorfield.can_route_from(where);
+}
+
 Vector RoutingEngine::get_orientation(const Location& from, const RoutingTarget& to)
 {
     return std::visit(

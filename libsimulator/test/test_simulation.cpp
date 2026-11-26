@@ -82,19 +82,37 @@ std::pair<Route::ID, BaseStage::ID> route_to(Simulation& sim, Point position, st
     return {route, stage};
 }
 
+/// A 5 x 5 room with a slit in its east wall, 6 cm wide and 2 m deep: wide enough for a thin
+/// agent to stand in, too narrow for a cell of the floor field, so no route leads out of it.
+test_geometries::SingleRoom room_with_a_slit()
+{
+    return test_geometries::from_polygon(
+        {{0, 0}, {5, 0}, {5, 2.47}, {7, 2.47}, {7, 2.53}, {5, 2.53}, {5, 5}, {0, 5}});
+}
+
+const Point in_the_slit{6.9, 2.5};
+/// Radius of an agent that fits into the slit.
+constexpr double thin = 0.01;
+
 /// A simulation whose model gives every agent a random number stream, ready to take agents.
 struct SeededRoom {
     static constexpr std::uint64_t seed = 1234;
     using AgentState = AnticipationVelocityModel::State;
 
-    test_geometries::SingleRoom room = test_geometries::rectangle({0, 0}, {20, 20});
+    test_geometries::SingleRoom room;
     std::size_t room_id = room.room_id;
     Simulation sim{
         std::make_unique<AnticipationVelocityModel>(0.3, seed),
         std::move(room.geometry),
         0.01,
         FloorfieldOptions{}};
-    Route::ID route = route_to(sim, Point{18, 18}, room_id).first;
+    Route::ID route = route_to(sim, Point{1, 4}, room_id).first;
+
+    explicit SeededRoom(
+        test_geometries::SingleRoom on = test_geometries::rectangle({0, 0}, {20, 20}))
+        : room(std::move(on))
+    {
+    }
 
     GenericAgent::ID add(Point position, AgentState state = {})
     {
@@ -540,6 +558,69 @@ TEST(SimulationClose, RejectsFurtherUse)
     EXPECT_THAT([&] { sim.geo(); }, closed);
 }
 
+TEST(AddAgent, AnAgentThatCannotBeRoutedIsNotAdded)
+{
+    using testing::HasSubstr;
+    using testing::ThrowsMessage;
+    auto room = room_with_a_slit();
+    Simulation sim{model(), std::move(room.geometry), 0.01, FloorfieldOptions{}};
+    const auto [route, stage] = route_to(sim, Point{2, 2}, room.room_id);
+    const auto spot = at(sim, in_the_slit, room.room_id);
+    State state{};
+    state.radius = thin;
+
+    EXPECT_THAT(
+        [&] { sim.add_agent(spot, route, {}, state, "anna"); },
+        ThrowsMessage<SimulationError>(HasSubstr("cannot be routed")));
+
+    EXPECT_EQ(sim.agent_count(), 0u);
+    EXPECT_EQ(sim.agent_named("anna"), std::nullopt);
+    EXPECT_TRUE(sim.agents_in_range(at(sim, {4.9, 2.5}, room.room_id), 3.0).empty());
+    EXPECT_EQ(sim.stage(stage)->count_targeting(), 0u);
+    EXPECT_TRUE(sim.reached_targets().empty());
+    EXPECT_NO_THROW(sim.iterate());
+}
+
+TEST(Simulation, ALocationThatCannotBeRoutedIsRejectedWhereverItIsHandedIn)
+{
+    using testing::AllOf;
+    using testing::HasSubstr;
+    using testing::ThrowsMessage;
+    auto room = room_with_a_slit();
+    Simulation sim{model(), std::move(room.geometry), 0.01, FloorfieldOptions{}};
+    const auto [route, stage] = route_to(sim, Point{2, 2}, room.room_id);
+    const auto spot = at(sim, in_the_slit, room.room_id);
+    const auto fine = at(sim, {4, 4}, room.room_id);
+    State state{};
+    state.radius = thin;
+    const auto rejected = [](const char* what) {
+        return ThrowsMessage<SimulationError>(
+            AllOf(HasSubstr(what), HasSubstr("cannot be routed")));
+    };
+
+    EXPECT_THAT([&] { sim.add_agent(spot, route, {}, state); }, rejected("location"));
+    EXPECT_THAT([&] { sim.add_agent(spot, fine, state); }, rejected("location"));
+    EXPECT_THAT([&] { sim.add_agent(fine, spot, state); }, rejected("steer_to"));
+    EXPECT_EQ(sim.agent_count(), 0u);
+
+    const auto id = sim.add_agent(fine, route, {}, state);
+    EXPECT_THAT([&] { sim.reroute(id, spot); }, rejected("steer_to"));
+    EXPECT_THAT([&] { sim.travel_time(stage, spot); }, rejected("location"));
+    EXPECT_THAT([&] { sim.agents_in_range(spot, 1.0); }, rejected("location"));
+    EXPECT_NO_THROW(sim.iterate());
+}
+
+TEST(Simulation, ALocationOnASeamCanBeRouted)
+{
+    auto rooms = test_geometries::two_rooms();
+    Simulation sim{model(), std::move(rooms.geometry), 0.01, FloorfieldOptions{}};
+    const auto route = route_to(sim, Point{2, 2}, rooms.room_1).first;
+    const auto on_the_seam = at(sim, {10, 5}, rooms.room_1);
+
+    EXPECT_NO_THROW(sim.add_agent(on_the_seam, route, {}, State{}));
+    EXPECT_NO_THROW(sim.iterate());
+}
+
 TEST(AgentRngSeeding, AgentsAddedFromTheSameStateGetTheirOwnStreams)
 {
     SeededRoom world;
@@ -557,6 +638,15 @@ TEST(AgentRngSeeding, ARejectedAgentUsesUpNoStream)
     invalid.radius = -1.0;
     EXPECT_THROW(world.add({2, 2}, invalid), SimulationError);
     EXPECT_TRUE(world.has_stream(world.add({2, 2}), 0));
+}
+
+TEST(AgentRngSeeding, AnAgentThatCannotBeRoutedUsesUpNoStream)
+{
+    SeededRoom world{room_with_a_slit()};
+    SeededRoom::AgentState state{};
+    state.radius = thin;
+    EXPECT_THROW(world.add(in_the_slit, state), SimulationError);
+    EXPECT_TRUE(world.has_stream(world.add({4, 4}), 0));
 }
 
 TEST(AgentRngSeeding, ARemovedAgentsStreamIsNotHandedOutAgain)

@@ -238,7 +238,7 @@ The B→A direction is the same set mirrored, because it is sampled from B's own
 - Returns a unit vector downhill along the Sobel gradient. If the point's cell is an obstacle, which happens next to a slanted wall, the nearest walkable cell within two cells is used instead.
 - Inside an area destination it returns zero. Inside a point destination's cell it points towards the point, and returns zero exactly on it.
 - On a ridge, where the gradient vanishes between two equally near exits, the steepest-descent neighbour decides.
-- `is_routable` tests the exact polygon, not the grid, so points in holes or walls are rejected.
+- `can_route_from` tells whether a point gets an answer: it is covered by the region's grid and a walkable cell lies within two cells. `direction` and `travel_time` fail as not routable where it is false, and only there. The point is not tested against the polygon: the caller knows it lies in the region.
 
 ### 3.11 Fail loudly at construction, never panic across the FFI
 - **Decision:** `new` floods the field and fails if any walkable cell is unreachable. This catches disconnected geometry and passages narrower than a cell. This test also catches the constraints of the implementation itself directly at construction.

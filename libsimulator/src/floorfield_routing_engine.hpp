@@ -74,6 +74,10 @@ public:
     /// travel time.
     Destination register_destination(const std::vector<AreaPiece>& pieces);
 
+    /// Whether an agent can be routed from @p where: a walkable cell of its region's grid lies
+    /// within two cells of it. contains(), travel_time() and get_orientation() throw for a
+    /// location where this is false, and for no other.
+    bool can_route_from(const Location& where) const;
     bool contains(const Location& where, std::size_t id);
     /// Travel time in seconds from @p where to destination @p id: the value of the grid cell
     /// nearest to it, zero inside the destination, infinite if it cannot be reached from there.

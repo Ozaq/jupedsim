@@ -112,6 +112,12 @@ Destination FloorfieldRoutingEngine::register_destination(const std::vector<Area
     return Destination{*this, id};
 }
 
+bool FloorfieldRoutingEngine::can_route_from(const Location& where) const
+{
+    const auto xy = where.xy();
+    return _field->region_can_route_from(where.region(), {xy.x(), xy.y()});
+}
+
 bool FloorfieldRoutingEngine::contains(const Location& where, std::size_t id)
 {
     return travel_time(where, id) == 0.0;

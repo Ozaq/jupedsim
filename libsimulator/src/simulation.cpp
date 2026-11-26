@@ -236,7 +236,7 @@ GenericAgent::ID Simulation::add_agent(
 {
     throw_if_state(State::Iterating | State::Closed, "add_agent");
     JPS_SCOPED_TIMER_AND_TRACE(_timer, "Add Agent", Detailed);
-    check_on_own_geometry(location, "location");
+    check_routable(location, "location");
     check_agent_name(name);
     auto& route = this->route(route_id);
     auto* stage = first_stage ? stage_in(route, *first_stage) : nullptr;
@@ -261,8 +261,8 @@ GenericAgent::ID Simulation::add_agent(
 {
     throw_if_state(State::Iterating | State::Closed, "add_agent");
     JPS_SCOPED_TIMER_AND_TRACE(_timer, "Add Agent", Detailed);
-    check_on_own_geometry(location, "location");
-    check_on_own_geometry(steer_to, "steer_to");
+    check_routable(location, "location");
+    check_routable(steer_to, "steer_to");
     check_agent_name(name);
     GenericAgent agent{
         GenericAgent::ID::invalid,
@@ -350,7 +350,7 @@ void Simulation::reroute(GenericAgent::ID agent_id, BaseStage::ID first_stage)
 void Simulation::reroute(GenericAgent::ID agent_id, const Location& steer_to)
 {
     throw_if_state(State::Iterating | State::Closed, "reroute");
-    check_on_own_geometry(steer_to, "steer_to");
+    check_routable(steer_to, "steer_to");
     auto& agent = reroutable(agent_id);
     if(agent.stage_id != BaseStage::ID::invalid) {
         _stage_manager.handle_remove_agent(agent.stage_id);
@@ -386,10 +386,17 @@ void Simulation::follow(GenericAgent& agent, Route::ID route_id, BaseStage& stag
     agent.target_reached = false;
 }
 
-void Simulation::check_on_own_geometry(const Location& location, const char* what) const
+void Simulation::check_routable(const Location& location, const char* what) const
 {
     if(!location.belongs_to(*_geometry)) {
         throw SimulationError("{} {} belongs to another geometry.", what, location);
+    }
+    if(!_routing_engine->can_route_from(location)) {
+        throw SimulationError(
+            "{} {} cannot be routed: the floor field has no walkable cell within two cells of "
+            "it.",
+            what,
+            location);
     }
 }
 
@@ -516,7 +523,7 @@ std::vector<GenericAgent::ID> Simulation::agents_in_range(const Location& from, 
 {
     throw_if_state(State::Closed, "agents_in_range");
     JPS_SCOPED_TIMER_AND_TRACE(_timer, "Agents in Range", Debug);
-    check_on_own_geometry(from, "location");
+    check_routable(from, "location");
     std::vector<GenericAgent::ID> neighbor_ids{};
     _neighborhood_search.for_each_in_range(
         from.xy(), distance, [this, &from, &neighbor_ids](const GenericAgent& agent) {
@@ -583,7 +590,7 @@ std::map<std::size_t, TravelTimeGrid> Simulation::travel_times(BaseStage::ID sta
 double Simulation::travel_time(BaseStage::ID stage_id, const Location& from)
 {
     throw_if_state(State::Iterating | State::Closed, "travel_time");
-    check_on_own_geometry(from, "location");
+    check_routable(from, "location");
     return _stage_manager.stage(stage_id)->destination().travel_time(from);
 }
 

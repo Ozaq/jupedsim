@@ -146,9 +146,10 @@ mod ffi {
             dest: usize,
         ) -> Result<()>;
 
-        /// Whether `p` lies in `region`'s polygon with a walkable cell near
-        /// enough to take a direction from.
-        fn region_is_routable(self: &MultiRegionFloorfield, region: usize, p: Point2d) -> bool;
+        /// Whether `region_direction` and `travel_time` find a cell for `p`,
+        /// a point of `region`: they throw "not walkable" where this is
+        /// false, and only there.
+        fn region_can_route_from(self: &MultiRegionFloorfield, region: usize, p: Point2d) -> bool;
 
         /// A destination at `p` in `region`, snapped to the nearest walkable
         /// cell within two cells. Throws if there is none. Returns its id.
@@ -275,8 +276,8 @@ impl MultiRegionFloorfield {
         self.clear_speed_override(region, dest)
     }
 
-    fn region_is_routable(&self, region: usize, p: Point2d) -> bool {
-        self.is_routable(region, p.x, p.y)
+    fn region_can_route_from(&self, region: usize, p: Point2d) -> bool {
+        self.can_route_from(region, p.x, p.y)
     }
 
     fn add_point_destination_ffi(
@@ -417,11 +418,11 @@ mod tests {
     }
 
     #[test]
-    fn single_region_routable_inside_not_outside() {
+    fn single_region_routes_from_the_room_not_from_far_outside() {
         let ff = room();
-        assert!(ff.region_is_routable(0, pt(10.0, 5.0)));
-        assert!(!ff.region_is_routable(0, pt(-1.0, 5.0)));
-        assert!(!ff.region_is_routable(0, pt(25.0, 5.0)));
+        assert!(ff.region_can_route_from(0, pt(10.0, 5.0)));
+        assert!(!ff.region_can_route_from(0, pt(-1.0, 5.0)));
+        assert!(!ff.region_can_route_from(0, pt(25.0, 5.0)));
     }
 
     #[test]
@@ -498,8 +499,7 @@ mod tests {
 
         let mut ff = new_multi_region_floorfield(&graph, 0.25, 0.5).unwrap();
         assert!(ff.seam_pair_count(0) > 0 && ff.seam_pair_count(1) > 0);
-        assert!(ff.region_is_routable(1, pt(9.0, 3.0)));
-        assert!(!ff.region_is_routable(1, pt(7.5, 1.5)), "inside the hole");
+        assert!(ff.region_can_route_from(1, pt(9.0, 3.0)));
 
         let dest = ff.add_point_destination(1, 9.5, 3.5).unwrap();
         let tt = ff.region_travel_times(0, dest).unwrap();

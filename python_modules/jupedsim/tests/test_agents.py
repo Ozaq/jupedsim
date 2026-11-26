@@ -231,6 +231,45 @@ def test_a_location_of_another_geometry_is_rejected():
     assert shared.agent_count() == 1
 
 
+def test_a_location_that_cannot_be_routed_is_rejected():
+    # A slit in the wall, 6 cm wide: no cell of the floor field fits into it.
+    surface = jps.GeometryBuilder()
+    room = surface.add_region(
+        boundary=[
+            (0, 0),
+            (5, 0),
+            (5, 2.47),
+            (7, 2.47),
+            (7, 2.53),
+            (5, 2.53),
+            (5, 5),
+            (0, 5),
+        ],
+        height=0.0,
+    )
+    sim = jps.Simulation(
+        model=jps.CollisionFreeSpeedModel(), geometry=surface.build()
+    )
+    exit_ = sim.add_target(jps.Exit([([(0, 0), (1, 0), (1, 1), (0, 1)], room)]))
+    route = sim.add_route([jps.FixedTransition(jps.AGENT_LOCATION, exit_)])
+    in_the_slit = room.at(6.9, 2.5)
+    thin = jps.CollisionFreeSpeedModelState(radius=0.01)
+
+    with pytest.raises(
+        jps.SimulationError, match="^location .* cannot be routed"
+    ):
+        sim.add_agent(in_the_slit, route=route, state=thin)
+    with pytest.raises(
+        jps.SimulationError, match="^steer_to .* cannot be routed"
+    ):
+        sim.add_agent(room.at(4, 4), steer_to=in_the_slit)
+    with pytest.raises(
+        jps.SimulationError, match="^location .* cannot be routed"
+    ):
+        sim.travel_time(exit_, in_the_slit)
+    assert sim.agent_count() == 0
+
+
 def test_custom_models_need_a_state():
     class Model(jps.CustomOperationalModel):
         def compute_next_state(self, current, next, step):

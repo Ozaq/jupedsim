@@ -31,6 +31,11 @@ public:
     /// travel time.
     Destination register_destination(const std::vector<AreaPiece>& pieces);
 
+    /// Whether an agent can be routed from @p where, see
+    /// FloorfieldRoutingEngine::can_route_from. Routing to a destination throws for a location
+    /// where this is false.
+    bool can_route_from(const Location& where) const;
+
     /// Unit vector from @p from along the route to @p to, projected to x/y. Zero once @p from
     /// has reached @p to.
     Vector get_orientation(const Location& from, const RoutingTarget& to);

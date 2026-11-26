@@ -289,7 +289,9 @@ class Simulation:
             ValueError: if neither or both of ``route`` and ``steer_to`` are given,
                 or a handle belongs to another simulation.
             SimulationError: if ``first_target`` is not part of the route, a location
-                belongs to another geometry, or the name is already used.
+                belongs to another geometry or cannot be routed (the floor field has
+                no walkable cell within two cells of it, which takes a dead end
+                narrower than two cells), or the name is already used.
         """
         location = self._checked_location(location, "location")
         if state is None:

@@ -391,14 +391,16 @@ def test_hdf5_trajectory_loading_travel_times_unknown_target_reports_id(
     travel_time_file,
 ) -> None:
     path, _, target_ids = travel_time_file
+    # Target ids are counted across all simulations of the process.
+    unknown = max(target_ids) + 1
     with (
         jps.Hdf5TrajectoryLoader(path) as loader,
         pytest.raises(
             jps.Hdf5TrajectoryLoader.Error,
-            match=r"No travel times for target_id=99$",
+            match=rf"No travel times for target_id={unknown}$",
         ),
     ):
-        loader.load_travel_times(99)
+        loader.load_travel_times(unknown)
 
 
 def test_hdf5_trajectory_loading_travel_times_before_the_first_snapshot(
@@ -410,11 +412,12 @@ def test_hdf5_trajectory_loading_travel_times_before_the_first_snapshot(
         assert list(loader.load_travel_times(target_ids[0], 7)) == [
             region.id for region in sim.travel_times(sim.target(target_ids[0]))
         ]
+        unknown = max(target_ids) + 1
         with pytest.raises(
             jps.Hdf5TrajectoryLoader.Error,
-            match=r"No travel times for target_id=99$",
+            match=rf"No travel times for target_id={unknown}$",
         ):
-            loader.load_travel_time_iterations(99)
+            loader.load_travel_time_iterations(unknown)
 
 
 def test_hdf5_trajectory_loading_travel_times_of_a_target_added_later(

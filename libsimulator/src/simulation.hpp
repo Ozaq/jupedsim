@@ -83,8 +83,10 @@ private:
 
     /// Throws SimulationError if the current state is in the mask @p forbidden.
     void throw_if_state(State forbidden, const char* operation) const;
-    /// Throws unless @p location lies on this simulation's geometry.
-    void check_on_own_geometry(const Location& location, const char* what) const;
+    /// Throws unless @p location lies on this simulation's geometry, where the floor field can
+    /// route from it. The precondition of every entry point that takes a location: no routing
+    /// query fails later for where it is asked.
+    void check_routable(const Location& location, const char* what) const;
     Route& route(Route::ID route_id);
     /// The stage @p stage_id of @p route; throws if it is not part of it.
     BaseStage* stage_in(const Route& route, BaseStage::ID stage_id) const;

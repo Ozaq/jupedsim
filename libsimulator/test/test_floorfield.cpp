@@ -187,11 +187,11 @@ TEST(Floorfield, RoutableLocations)
 {
     const auto floors = test_geometries::floors_joined_by_stairs();
     auto field = field_over(*floors.geometry, 0.1);
-    EXPECT_TRUE(field->region_is_routable(floors.room_1, {2.5, 2.5}));
-    EXPECT_TRUE(field->region_is_routable(floors.room_2, {12.5, 2.5}));
-    EXPECT_FALSE(field->region_is_routable(floors.room_1, {12.5, 2.5}))
+    EXPECT_TRUE(field->region_can_route_from(floors.room_1, {2.5, 2.5}));
+    EXPECT_TRUE(field->region_can_route_from(floors.room_2, {12.5, 2.5}));
+    EXPECT_FALSE(field->region_can_route_from(floors.room_1, {12.5, 2.5}))
         << "on the upper floor, not the ground";
-    EXPECT_FALSE(field->region_is_routable(floors.room_1, {20, 2.5})) << "off the surface";
+    EXPECT_FALSE(field->region_can_route_from(floors.room_1, {20, 2.5})) << "off the surface";
 }
 
 /// An exit over both rooms and the doorway between them is one destination: inside any
