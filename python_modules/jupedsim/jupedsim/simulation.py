@@ -252,7 +252,7 @@ class Simulation:
             | WarpDriverModelState
             | Any
         ) = None,
-        name: str = "",
+        name: str | None = "",
     ) -> Agent:
         """Add an agent to the simulation.
 
@@ -277,9 +277,9 @@ class Simulation:
                 whatever type your :class:`~jupedsim.CustomOperationalModel` expects;
                 required. When adding agents with invalid parameters, or too close to
                 the boundary or other agents, this will cause an error.
-            name: Unique among the agents of this simulation, unless empty, which
-                means no name; free again once its agent has left. Used in
-                :meth:`agent`.
+            name: Unique among the agents of this simulation, unless empty or
+                ``None``, which both mean no name; free again once its agent has
+                left. Used in :meth:`agent`.
 
         Returns:
             Handle to the new agent.
@@ -294,6 +294,9 @@ class Simulation:
                 narrower than two cells), or the name is already used.
         """
         location = self._checked_location(location, "location")
+        # Targets, routes and regions spell "no name" None; agents take it too.
+        if name is None:
+            name = ""
         if state is None:
             if self._default_state is None:
                 raise ValueError(

@@ -84,6 +84,14 @@ def test_the_empty_name_names_no_agent():
         r.sim.agent("")
 
 
+def test_none_names_no_agent_either():
+    r = _Room()
+    routed = r.sim.add_agent(r.at(5, 5), route=r.route, name=None)
+    steered = r.sim.add_agent(r.at(5, 7), steer_to=r.at(5, 8), name=None)
+    assert (routed.name, steered.name) == ("", "")
+    assert repr(routed) == f"Agent(id={routed.id})"
+
+
 def test_a_foreign_unnamed_agent_is_named_by_its_id_alone():
     r, other = _Room(), _Room()
     foreign = other.sim.add_agent(other.at(5, 5), route=other.route)
