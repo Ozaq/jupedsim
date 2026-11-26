@@ -29,7 +29,9 @@ class BaseStage;
 struct GenericAgent {
     using ID = jps::UniqueID<GenericAgent>;
     ID id{};
-    /// Unique among the agents of a simulation; empty if the agent has no name.
+    /// Unique among the agents of a simulation; empty if the agent has no name. Given when the
+    /// agent is added and not to be changed afterwards: Simulation indexes its agents by name
+    /// then (Simulation::agent_named) and never learns of another one.
     std::string name;
 
     /// Invalid, as is stage_id, while the agent is steered to the location in current_target.

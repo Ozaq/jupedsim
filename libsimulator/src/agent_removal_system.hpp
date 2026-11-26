@@ -7,6 +7,7 @@
 
 #include <boost/container/deque.hpp>
 
+#include <cassert>
 #include <string>
 #include <unordered_map>
 
@@ -46,6 +47,10 @@ void AgentRemovalSystem<Agent>::run(
             stage_manager.handle_remove_agent(agent.stage_id);
         }
         if(!agent.name.empty()) {
+            // The name is still the one the agent was added with, see GenericAgent::name.
+            assert(
+                agent_ids_by_name.contains(agent.name) &&
+                agent_ids_by_name.at(agent.name) == agent.id);
             agent_ids_by_name.erase(agent.name);
         }
         return true;
