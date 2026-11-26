@@ -142,12 +142,9 @@ void Simulation::iterate()
         _removals.clear();
         std::swap(_removals, _marked_for_removal);
         if(!_removals.empty()) {
-            for(const auto& removal : _removals) {
-                if(const auto& name = agent(removal.agent_id).name; !name.empty()) {
-                    _agent_ids_by_name.erase(name);
-                }
-            }
-            _agent_removal_system.run(_agents, _stage_manager);
+            // Nothing may throw between taking the removals above and removing the agents, or
+            // the agents stay while their records are gone.
+            _agent_removal_system.run(_agents, _stage_manager, _agent_ids_by_name);
             assert(sorted_by_id(_agents));
         }
     }
