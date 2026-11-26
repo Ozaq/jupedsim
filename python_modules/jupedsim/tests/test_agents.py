@@ -66,6 +66,16 @@ def test_an_unnamed_agent_has_the_empty_name():
     assert repr(agent) == f"Agent(id={agent.id})"
 
 
+@pytest.mark.parametrize("name", ["anna", ""])
+def test_a_removed_agent_is_shown_by_its_id_alone(name):
+    r = _Room()
+    agent = r.sim.add_agent(r.at(5, 5), route=r.route, name=name)
+    r.sim.mark_agent_for_removal(agent)
+    r.sim.iterate()
+    assert repr(agent) == f"Agent(id={agent.id})"
+    assert f"{[agent]}" == f"[Agent(id={agent.id})]"
+
+
 def test_the_empty_name_names_no_agent():
     r = _Room()
     r.sim.add_agent(r.at(5, 5), route=r.route, name="")

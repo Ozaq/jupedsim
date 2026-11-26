@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from jupedsim.pyjupedsim import Location, _CustomModelState
+from jupedsim.pyjupedsim import Location, SimulationError, _CustomModelState
 from jupedsim.route import Route
 from jupedsim.target import RouteTarget
 
@@ -236,7 +236,12 @@ class Agent:
         return hash((id(self._simulation), self._id))
 
     def __repr__(self) -> str:
-        name = self.name
+        # A handle outlives its agent and has to stay printable then: in a
+        # list, a log line, a notebook cell or a debugger.
+        try:
+            name = self.name
+        except SimulationError:
+            name = ""
         if not name:
             return f"Agent(id={self._id})"
         return f"Agent(id={self._id}, name={name!r})"
