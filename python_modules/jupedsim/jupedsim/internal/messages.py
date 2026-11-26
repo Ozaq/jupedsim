@@ -7,13 +7,16 @@ class _Named(Protocol):
     def id(self) -> int: ...
 
     @property
-    def name(self) -> str | None: ...  # agents: empty if unnamed
+    def name(self) -> str | None: ...
 
 
 def id_and_name(handle: _Named) -> str:
     """Id of ``handle``, followed by its name in parentheses if it has one,
     e.g. ``3 (wp1)``, as the messages from C++ name it. Messages put the kind
-    in front: ``Target 3 (wp1) belongs to another simulation``."""
-    if not handle.name:
+    in front: ``Target 3 (wp1) belongs to another simulation``.
+
+    Only ``None`` is no name: targets, routes and regions may be named ``""``,
+    which C++ prints as ``3 ()``."""
+    if handle.name is None:
         return str(handle.id)
     return f"{handle.id} ({handle.name})"

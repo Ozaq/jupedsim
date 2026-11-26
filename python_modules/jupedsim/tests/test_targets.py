@@ -252,3 +252,39 @@ def test_a_target_of_another_simulation_is_rejected(square_room_5x5):
     foreign = other.add_target(jps.Exit([(LEFT_STRIP, other_room)]))
     with pytest.raises(ValueError, match="belongs to another simulation"):
         sim.travel_times(foreign)
+
+
+@pytest.mark.parametrize(
+    "name, shown",
+    [(None, "{id}"), ("", r"{id} \(\)"), ("wp", r"{id} \(wp\)")],
+    ids=["unnamed", "empty_name", "named"],
+)
+def test_a_foreign_target_or_route_is_shown_with_the_name_it_has(
+    square_room_5x5, name, shown
+):
+    sim, room = square_room_5x5
+    other, other_room = _square_room_5x5()
+    target = other.add_target(
+        jps.Waypoint([(LEFT_STRIP, other_room)]), name=name
+    )
+    route = other.add_route(
+        [jps.FixedTransition(jps.AGENT_LOCATION, target)], name=name
+    )
+    with pytest.raises(
+        ValueError,
+        match=f"^Target {shown.format(id=target.id)} belongs to another",
+    ):
+        sim.travel_times(target)
+    with pytest.raises(
+        ValueError,
+        match=f"^Route {shown.format(id=route.id)} belongs to another",
+    ):
+        sim.add_agent(room.at(0, 0), route=route)
+    # The messages from C++ name them alike.
+    stranger = other.add_target(jps.Waypoint([(LEFT_STRIP, other_room)]))
+    with pytest.raises(
+        jps.SimulationError,
+        match=f"^Target {stranger.id} is not part of route "
+        f"{shown.format(id=route.id)}",
+    ):
+        other.add_agent(other_room.at(0, 0), route=route, first_target=stranger)
